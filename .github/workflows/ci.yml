@@ -10,13 +10,13 @@ permissions:
 
 jobs:
   server:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     defaults:
       run:
         working-directory: server
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -25,6 +25,15 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       # mongodb-memory-server downloads a real mongod and runs the integration tests against it
-      - run: npm test
+      - name: Test
+        run: |
+          set -o pipefail
+          npm test 2>&1 | tee test.log
+      - name: Show failing test output as an annotation
+        if: failure()
+        run: |
+          [ -f test.log ] || exit 0
+          body=$(tail -n 150 test.log | sed 's/\x1b\[[0-9;]*m//g' | sed ':a;N;$!ba;s/%/%25/g;s/\r//g;s/\n/%0A/g')
+          echo "::error title=Test output::$body"
       - run: npm run build
       - run: npm audit --omit=dev --audit-level=high
