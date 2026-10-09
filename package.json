@@ -1,0 +1,16 @@
+{
+  "name": "taskflow",
+  "version": "0.1.0",
+  "private": true,
+  "description": "TaskFlow: a personal task manager with a 3D desk interface",
+  "scripts": {
+    "dev": "npm --prefix server run dev",
+    "test": "npm --prefix server test",
+    "lint": "npm --prefix server run lint",
+    "typecheck": "npm --prefix server run typecheck",
+    "build": "npm --prefix server run build"
+  },
+  "engines": {
+    "node": ">=20.11"
+  }
+}
