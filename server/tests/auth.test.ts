@@ -144,9 +144,14 @@ describe('refresh token rotation', () => {
     expect(stolen).toBeTruthy();
     await c.post('/api/auth/refresh'); // the real user moves on; `stolen` is now an old token
 
-    const attacker = new Client();
-    await attacker.getCsrf();
-    const replay = await attacker.agent.post('/api/auth/refresh').set('Origin', ORIGIN).set('X-CSRF-Token', attacker.csrf).set('Cookie', [`tf_rt=${stolen}`, `tf_csrf=${attacker.csrf}`]);
+    // The attacker's own browser: no cookie jar of the victim, just the copied refresh token and its own CSRF pair.
+    const csrfRes = await request(app).get('/api/auth/csrf').set('Origin', ORIGIN);
+    const csrf = csrfRes.body.csrfToken as string;
+    const replay = await request(app)
+      .post('/api/auth/refresh')
+      .set('Origin', ORIGIN)
+      .set('X-CSRF-Token', csrf)
+      .set('Cookie', `tf_rt=${stolen}; tf_csrf=${csrf}`);
     expect(replay.status).toBe(401);
     // ...and the legitimate holder is signed out too, because we cannot tell which copy is the thief's.
     expect((await c.post('/api/auth/refresh')).status).toBe(401);
