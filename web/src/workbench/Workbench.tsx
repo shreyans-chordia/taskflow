@@ -116,7 +116,7 @@ export function Workbench({ onToggleTheme }: { onToggleTheme: () => void }) {
           <ul className="wb-list" aria-label="Tasks">
             {tasks.data.map((t) => (
               <TaskRow key={t.id} task={t} level={byId.get(t.priorityId)} levels={levels.length} categories={t.categoryIds.map((c) => catName.get(c) ?? '').filter(Boolean)}
-                onToggle={(done) => update.mutate({ id: t.id, done })} onDelete={() => remove.mutate(t.id)} />
+                onToggle={(done) => update.mutateAsync({ id: t.id, done }).catch(() => undefined)} onDelete={() => remove.mutate(t.id)} />
             ))}
           </ul>
         )}
@@ -125,10 +125,23 @@ export function Workbench({ onToggleTheme }: { onToggleTheme: () => void }) {
   );
 }
 
-function TaskRow({ task, level, levels, categories, onToggle, onDelete }: { task: Task; level?: Priority; levels: number; categories: string[]; onToggle: (done: boolean) => void; onDelete: () => void }) {
+function TaskRow({ task, level, levels, categories, onToggle, onDelete }: { task: Task; level?: Priority; levels: number; categories: string[]; onToggle: (done: boolean) => Promise<unknown>; onDelete: () => void }) {
+  // While a save is in flight the box shows what was clicked, set in the same event as the click
+  // (React Query's cache update lands a tick later, which made the box flicker back). When the save
+  // settles the box follows the server data again, which is the rolled-back value if it failed.
+  const [pending, setPending] = useState<boolean | null>(null);
+  const done = pending ?? task.done;
   return (
-    <li className={`wb-row${task.done ? ' done' : ''}`}>
-      <input type="checkbox" checked={task.done} onChange={(e) => onToggle(e.target.checked)} aria-label={`Mark ${task.title} ${task.done ? 'not done' : 'done'}`} />
+    <li className={`wb-row${done ? ' done' : ''}`}>
+      <input
+        type="checkbox"
+        checked={done}
+        onChange={(e) => {
+          setPending(e.target.checked);
+          void onToggle(e.target.checked).finally(() => setPending(null));
+        }}
+        aria-label={`Mark ${task.title} ${done ? 'not done' : 'done'}`}
+      />
       {level && (
         <span className="wb-pill" style={{ ['--pc' as string]: level.color }}>
           <Ring filled={levels - level.order} segments={levels} color={level.color} size={16} />
