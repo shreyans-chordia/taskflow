@@ -23,7 +23,21 @@ export function Workbench({ onToggleTheme }: { onToggleTheme: () => void }) {
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ['tasks'] });
   const create = useMutation({ mutationFn: tasksApi.create, onSuccess: invalidate });
-  const update = useMutation({ mutationFn: ({ id, done }: { id: string; done: boolean }) => tasksApi.update(id, { done }), onSuccess: invalidate });
+  // Ticking a task updates the list at once (optimistic) and puts it back if the server refuses.
+  const update = useMutation({
+    mutationFn: ({ id, done }: { id: string; done: boolean }) => tasksApi.update(id, { done }),
+    onMutate: async ({ id, done }) => {
+      await qc.cancelQueries({ queryKey: ['tasks'] });
+      const previous = qc.getQueryData<Task[]>(['tasks']);
+      qc.setQueryData<Task[]>(['tasks'], (list) => list?.map((t) => (t.id === id ? { ...t, done } : t)));
+      return { previous };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.previous) qc.setQueryData(['tasks'], ctx.previous);
+      setError('Could not update the task. Try again.');
+    },
+    onSettled: invalidate,
+  });
   const remove = useMutation({ mutationFn: tasksApi.remove, onSuccess: invalidate });
 
   const levels = priorities.data ?? [];
