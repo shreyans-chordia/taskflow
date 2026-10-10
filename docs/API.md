@@ -12,6 +12,8 @@ Base path `/api`. JSON in, JSON out. Errors always look like:
 2. Send every `POST`/`PATCH`/`PUT`/`DELETE` with `credentials: 'include'` and the header `X-CSRF-Token: <csrfToken>`.
 3. Sign-in, sign-up, refresh and `GET /me` return a fresh `csrfToken`; replace the one you hold.
 4. On a `401` from any endpoint, call `POST /api/auth/refresh` once, then retry. If refresh also returns `401`, show the sign-in screen.
+5. On a `403` with code `CSRF` (stale or missing token), fetch a new token and retry once. A `403` with code
+   `FORBIDDEN` (for example an unknown `Origin`) is final; do not retry it.
 
 ## Auth
 

@@ -1,0 +1,4 @@
+.backdrop { position: fixed; inset: -24px; background: center / cover no-repeat url('/backdrop-light.jpg'); filter: blur(4px) }
+.backdrop[data-theme-img="dark"] { background-image: url('/backdrop-dark.jpg') }
+.boot { position: fixed; inset: 0; display: grid; place-content: center; justify-items: center; gap: 14px; background: var(--bg); color: #FDF9F0; font: 700 26px/1 var(--f-label); letter-spacing: .08em; text-transform: uppercase }
+.boot span { font: 500 14px var(--f-ui); letter-spacing: 0; text-transform: none; opacity: .8 }

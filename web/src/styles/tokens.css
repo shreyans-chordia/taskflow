@@ -1,0 +1,62 @@
+/* TaskFlow design tokens: Paper & Graphite, frosted paper glass. Dark mode is a pure token swap. */
+:root {
+  color-scheme: light;
+  --bg: #1E1A17;
+  --g-ink: #2B2E33;
+  --g-sub: #33373E;
+  --g-tint: rgba(253, 249, 240, .6);
+  --g-sheen: rgba(255, 255, 255, .34);
+  --g-blur: blur(26px) saturate(150%);
+  --g-hi: rgba(255, 255, 255, .85);
+  --g-lo: rgba(110, 74, 40, .28);
+  --g-shadow: 0 26px 60px rgba(18, 10, 2, .5), 0 3px 8px rgba(18, 10, 2, .3);
+  --g-line: rgba(43, 46, 51, .26);
+  --g-field: rgba(255, 255, 255, .55);
+  --g-cell: rgba(255, 255, 255, .34);
+  --g-solid: rgba(250, 245, 234, .97);
+  --veil: rgba(36, 30, 25, .26);
+  --pen: #2F4E7A;
+  --on-pen: #FDF9F0;
+  --pen-glow: rgba(47, 78, 122, .35);
+  --coral: #E04A2F;
+  --amber: #F0A81C;
+  --mint: #4E9E78;
+  --ring-track: #CFC4AE;
+  --mixbase: #FFFFFF;
+  --danger-ink: #9E1F17;
+  --danger-line: #B4232A;
+  --f-ui: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-script: Caveat, "Comic Sans MS", cursive;
+  --f-label: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
+  --ease-out: cubic-bezier(.16, 1, .3, 1);
+  --ease-in: cubic-bezier(.5, 0, .75, 0);
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0E0F13;
+  --g-ink: #ECE6DA;
+  --g-sub: #C7C0B3;
+  --g-tint: rgba(30, 30, 34, .58);
+  --g-sheen: rgba(255, 255, 255, .07);
+  --g-blur: blur(26px) saturate(140%);
+  --g-hi: rgba(255, 255, 255, .14);
+  --g-lo: rgba(0, 0, 0, .45);
+  --g-shadow: 0 26px 60px rgba(0, 0, 0, .6), 0 3px 8px rgba(0, 0, 0, .4);
+  --g-line: rgba(236, 230, 218, .2);
+  --g-field: rgba(255, 255, 255, .09);
+  --g-cell: rgba(255, 255, 255, .06);
+  --g-solid: rgba(28, 29, 34, .97);
+  --veil: rgba(0, 0, 0, .32);
+  --pen: #9DB8E0;
+  --on-pen: #13161C;
+  --pen-glow: rgba(157, 184, 224, .25);
+  --coral: #F07A60;
+  --amber: #F2B84A;
+  --mint: #6FBF97;
+  --ring-track: rgba(243, 237, 226, .3);
+  --mixbase: #2C2D32;
+  --danger-ink: #FF9C8F;
+  --danger-line: #FF8A85;
+}

@@ -3,8 +3,9 @@
 A personal task manager whose home screen is a 3D desk: tasks are sticky notes on a corkboard, deadlines sit on a wall
 calendar, categories are trays on a shelf, and a Pomodoro clock ticks on the desk.
 
-> Status: the front end exists as a single-file prototype (`prototype/room.html`). The secure REST API in `server/` is
-> the first part of the real application; the React front end comes next.
+> Status: the secure REST API (`server/`) and the React front end (`web/`) are connected: sign-up, sign-in and tasks
+> run on the real API and MongoDB. The 3D desk from the prototype (`prototype/room.html`) is being ported to React Three
+> Fiber next.
 
 ## Stack
 
@@ -14,8 +15,9 @@ calendar, categories are trays on a shelf, and a Pomodoro clock ticks on the des
 | Data | MongoDB with Mongoose 8 |
 | Validation | zod 4 (strict schemas on every request) |
 | Auth | bcrypt, 15-minute JWT access token + rotating refresh token, both in HttpOnly cookies, CSRF tokens |
-| Tests | Vitest, Supertest, mongodb-memory-server |
-| CI | GitHub Actions: lint, typecheck, tests, build, npm audit |
+| Web | React 19, TypeScript, Vite 7, TanStack Query |
+| Tests | Vitest, Supertest, mongodb-memory-server (API) · Vitest + Testing Library (web) · Playwright (end to end) |
+| CI | GitHub Actions: lint, typecheck, unit and integration tests, build, npm audit, Playwright against MongoDB 7 |
 
 ## Security highlights
 
@@ -47,6 +49,18 @@ headers and validated configuration. Details and the threat model: [`docs/SECURI
 5. Run the tests (no Docker needed, they start their own MongoDB):
    ```powershell
    npm test
+   ```
+6. In a second PowerShell window, start the web app (it forwards `/api` calls to the API on port 4000):
+   ```powershell
+   cd web
+   npm install
+   npm run dev
+   ```
+   Open `http://localhost:5173` and create an account.
+7. Optional, end-to-end tests in a real browser (needs MongoDB from step 2; uses its own ports and database):
+   ```powershell
+   npx playwright install chromium
+   npm run e2e
    ```
 
 ## API

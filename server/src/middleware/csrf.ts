@@ -2,7 +2,7 @@ import type { NextFunction, Request, Response } from 'express';
 import { env } from '../config/env.js';
 import { COOKIE } from '../services/cookies.js';
 import { safeEqual } from '../services/tokens.js';
-import { forbidden } from '../utils/errors.js';
+import { AppError, forbidden } from '../utils/errors.js';
 
 const SAFE = new Set(['GET', 'HEAD', 'OPTIONS']);
 
@@ -18,6 +18,6 @@ export function csrfProtection(req: Request, _res: Response, next: NextFunction)
   if (origin && !env.corsOrigins.includes(origin)) return next(forbidden('Request blocked: unknown origin.'));
   const cookie = req.cookies?.[COOKIE.csrf];
   const header = req.get('x-csrf-token');
-  if (!cookie || !header || !safeEqual(cookie, header)) return next(forbidden('Request blocked: missing or invalid CSRF token. Reload and try again.'));
+  if (!cookie || !header || !safeEqual(cookie, header)) return next(new AppError(403, 'CSRF', 'Request blocked: missing or invalid CSRF token. Reload and try again.'));
   next();
 }

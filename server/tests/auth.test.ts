@@ -60,6 +60,8 @@ describe('CSRF and origin checks', () => {
   it('blocks a state-changing request without the CSRF header', async () => {
     const res = await request(app).post('/api/auth/signup').set('Origin', ORIGIN).send({ name: 'A', email: 'a@example.com', password: 'Deskbound#7' });
     expect(res.status).toBe(403);
+    // A distinct code lets the web client fetch a fresh token and retry once.
+    expect(res.body.error.code).toBe('CSRF');
   });
 
   it('blocks a request from an unknown origin even with a valid token', async () => {
@@ -67,6 +69,8 @@ describe('CSRF and origin checks', () => {
     await c.getCsrf();
     const res = await c.agent.post('/api/auth/signup').set('Origin', 'https://evil.example').set('X-CSRF-Token', c.csrf).send({ name: 'A', email: 'a@example.com', password: 'Deskbound#7' });
     expect(res.status).toBe(403);
+    // Not retryable: the client must not treat a foreign origin as a stale token.
+    expect(res.body.error.code).toBe('FORBIDDEN');
   });
 });
 
