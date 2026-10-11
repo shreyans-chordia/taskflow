@@ -11,6 +11,8 @@ export const COOKIE = {
   access: env.isProd ? '__Host-tf_at' : 'tf_at',
   refresh: env.isProd ? '__Secure-tf_rt' : 'tf_rt',
   csrf: env.isProd ? '__Host-tf_csrf' : 'tf_csrf',
+  /** The pending one-time-code challenge (second sign-in step or password reset). */
+  otp: env.isProd ? '__Secure-tf_otp' : 'tf_otp',
 };
 
 const base = (): CookieOptions => ({
@@ -31,6 +33,15 @@ export function setCsrfCookie(res: Response): string {
   const token = randomToken(24);
   res.cookie(COOKIE.csrf, token, { ...base(), path: '/', maxAge: refreshTtlMs() });
   return token;
+}
+
+/** Like the refresh cookie, the challenge only travels to the auth endpoints and dies with the code. */
+export function setOtpCookie(res: Response, token: string): void {
+  res.cookie(COOKIE.otp, token, { ...base(), path: '/api/auth', maxAge: env.OTP_TTL_MIN * 60 * 1000 });
+}
+
+export function clearOtpCookie(res: Response): void {
+  res.clearCookie(COOKIE.otp, { ...base(), path: '/api/auth' });
 }
 
 export function clearAuthCookies(res: Response): void {

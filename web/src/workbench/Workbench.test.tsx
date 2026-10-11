@@ -9,7 +9,7 @@ import { AuthProvider } from '../auth/AuthProvider';
 import { Workbench } from './Workbench';
 
 vi.mock('../api/endpoints', () => ({
-  authApi: { me: vi.fn(), signup: vi.fn(), login: vi.fn(), logout: vi.fn() },
+  authApi: { me: vi.fn(), signup: vi.fn(), login: vi.fn(), verifyLogin: vi.fn(), resendCode: vi.fn(), forgotPassword: vi.fn(), resetPassword: vi.fn(), logout: vi.fn() },
   tasksApi: { list: vi.fn(), create: vi.fn(), update: vi.fn(), remove: vi.fn() },
   categoriesApi: { list: vi.fn() },
   prioritiesApi: { list: vi.fn() },

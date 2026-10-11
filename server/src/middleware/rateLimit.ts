@@ -21,3 +21,15 @@ export const authLimiter = rateLimit({
   skipSuccessfulRequests: true,
   message: json('Too many attempts. Try again in 15 minutes.'),
 });
+
+/**
+ * Asking for a code always "succeeds" (forgot-password answers 200 for any email), so this limiter counts every
+ * request. Together with the per-account hourly cap in services/otp.ts it stops an inbox from being flooded.
+ */
+export const codeEmailLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: env.isTest ? 10_000 : 10,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  message: json('Too many codes requested. Try again in 15 minutes.'),
+});

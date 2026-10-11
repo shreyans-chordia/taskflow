@@ -1,12 +1,17 @@
 import { api, clearCsrfToken } from './client';
-import type { Category, NewTask, Priority, Task, TaskPatch, TaskQuery, User } from './types';
+import type { Category, CodeChallenge, NewTask, Priority, Task, TaskPatch, TaskQuery, User } from './types';
 
 type UserRes = { user: User; csrfToken: string };
 
 export const authApi = {
   me: () => api<UserRes>('GET', '/auth/me'),
   signup: (b: { name: string; email: string; password: string }) => api<UserRes>('POST', '/auth/signup', b),
-  login: (b: { email: string; password: string }) => api<UserRes>('POST', '/auth/login', b),
+  /** Step one: a correct password emails a code; the session starts in `verifyLogin`. */
+  login: (b: { email: string; password: string }) => api<CodeChallenge>('POST', '/auth/login', b),
+  verifyLogin: (code: string) => api<UserRes>('POST', '/auth/login/verify', { code }),
+  resendCode: () => api<{ expiresInSec: number; resendInSec: number }>('POST', '/auth/otp/resend'),
+  forgotPassword: (email: string) => api<CodeChallenge>('POST', '/auth/password/forgot', { email }),
+  resetPassword: (b: { code: string; password: string }) => api<UserRes>('POST', '/auth/password/reset', b),
   logout: async () => {
     await api<void>('POST', '/auth/logout');
     clearCsrfToken();

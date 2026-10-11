@@ -24,18 +24,24 @@ const label = z.string().trim().min(1, 'Give it a name.').max(24, 'Keep it to 24
 
 /* ---------- auth ---------- */
 const email = z.string().trim().toLowerCase().pipe(z.email('That does not look like an email address.').max(254));
+const newPassword = z
+  .string()
+  .min(8, 'Use at least 8 characters.')
+  .refine((p) => Buffer.byteLength(p, 'utf8') <= MAX_PASSWORD_BYTES, `Keep it under ${MAX_PASSWORD_BYTES} bytes.`);
+const otpCode = z.string().trim().regex(/^\d{6}$/, 'Enter the 6-digit code from the email.');
+
 export const signupSchema = z.strictObject({
   name: z.string().trim().min(1, 'Tell us what to call you.').max(60, 'Keep it to 60 characters.'),
   email,
-  password: z
-    .string()
-    .min(8, 'Use at least 8 characters.')
-    .refine((p) => Buffer.byteLength(p, 'utf8') <= MAX_PASSWORD_BYTES, `Keep it under ${MAX_PASSWORD_BYTES} bytes.`),
+  password: newPassword,
 });
 export const loginSchema = z.strictObject({
   email: z.string().trim().toLowerCase().max(254),
   password: z.string().min(1, 'Enter your password.').max(200),
 });
+export const otpVerifySchema = z.strictObject({ code: otpCode });
+export const forgotPasswordSchema = z.strictObject({ email });
+export const resetPasswordSchema = z.strictObject({ code: otpCode, password: newPassword });
 
 /* ---------- tasks ---------- */
 const deadline = z.union([z.iso.datetime({ offset: true }), z.iso.date()]).nullable();
