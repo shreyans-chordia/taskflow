@@ -7,6 +7,11 @@ import { defineConfig } from 'vitest/config';
  */
 export default defineConfig({
   plugins: [react()],
+  build: {
+    // The desk chunk carries three.js (~250 kB gzipped). It is lazy: it downloads while the person signs in,
+    // never as part of the first page load.
+    chunkSizeWarningLimit: 1000,
+  },
   server: {
     port: 5173,
     strictPort: true,

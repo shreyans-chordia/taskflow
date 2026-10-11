@@ -3,13 +3,25 @@ import path from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
 
 /**
- * The whole path a new user takes, on the real API and database:
- * sign up → "desk is ready" → add a task → reload (session survives) → tick it → sign out → sign in again
- * with the emailed code. Requirement IDs refer to the TaskFlow IEEE SRS.
+ * The whole path a new user takes, on the real API and database, with the 3D desk as the home screen:
+ * sign up → "desk is ready" → open the corkboard → add a task → reload (session survives) → tick it → sign out →
+ * sign in again with the emailed code. Requirement IDs refer to the TaskFlow IEEE SRS.
  */
 
 const PASSWORD = 'Deskbound#7';
 const unique = (tag: string) => `${tag}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}@example.com`;
+
+/** Lands on the desk and opens the task list from the shortcut rail (the same as clicking the corkboard). */
+async function openTasks(page: Page) {
+  await page.getByRole('navigation', { name: 'Desk shortcuts' }).getByRole('button', { name: 'Tasks', exact: true }).click();
+  await expect(page.getByRole('dialog', { name: 'Your tasks' })).toBeVisible();
+}
+
+/** Closes the open panel; the camera flies back and the top bar is reachable again. */
+async function closePanel(page: Page) {
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog')).toBeHidden();
+}
 
 async function signUp(page: Page, name: string, email: string) {
   await page.goto('/');
@@ -20,7 +32,7 @@ async function signUp(page: Page, name: string, email: string) {
   await page.getByRole('button', { name: 'Create my desk' }).click();
   await expect(page.getByRole('heading', { name: /Your desk is ready/ })).toBeVisible();
   await page.getByRole('button', { name: 'Go to my desk' }).click();
-  await expect(page.getByRole('heading', { name: 'Your tasks' })).toBeVisible();
+  await openTasks(page);
 }
 
 /** The 6-digit code in the newest email the API wrote for `to` (see MAIL_TRANSPORT=file in playwright.config.ts). */
@@ -49,7 +61,12 @@ async function signIn(page: Page, email: string, password = PASSWORD) {
   await expect(page.getByRole('heading', { name: 'Check your email' })).toBeVisible();
   await page.getByLabel('6-digit code').fill(await latestCode(email));
   await page.getByRole('button', { name: 'Verify and open my desk' }).click();
-  await expect(page.getByRole('heading', { name: 'Your tasks' })).toBeVisible();
+  await openTasks(page);
+}
+
+async function signOut(page: Page) {
+  if (await page.getByRole('dialog').isVisible()) await closePanel(page);
+  await page.getByRole('button', { name: 'Sign out' }).click();
 }
 
 async function openSignIn(page: Page) {
@@ -72,25 +89,41 @@ test('a new user signs up, pins a task, and finds it again after signing back in
 
   // The session lives in HttpOnly cookies, so a reload keeps you signed in and the task comes back from the API.
   await page.reload();
-  await expect(page.getByRole('heading', { name: 'Your tasks' })).toBeVisible();
+  await openTasks(page);
   await expect(row).toBeVisible();
 
   // Mark it done; the state is saved on the server.
   await row.getByRole('checkbox').check();
   await expect(row.getByRole('checkbox')).toBeChecked();
   await page.reload();
+  await openTasks(page);
   await expect(page.getByRole('listitem').filter({ hasText: 'Submit Lab 7 record' }).getByRole('checkbox')).toBeChecked();
 
   // Sign out, then back in: password, then the code from the email (AUTH-6).
-  await page.getByRole('button', { name: 'Sign out' }).click();
+  await signOut(page);
   await signIn(page, email);
   await expect(page.getByText('Submit Lab 7 record')).toBeVisible();
+});
+
+test('the desk opens a tray as that category and closes back to the room (CAT-2)', async ({ page }) => {
+  await signUp(page, 'Trays', unique('tray'));
+  await page.getByLabel('New task').fill('Revise normal forms');
+  await page.getByRole('button', { name: 'Pin it' }).click();
+  await expect(page.getByRole('listitem').filter({ hasText: 'Revise normal forms' })).toBeVisible();
+  await closePanel(page);
+
+  // "Categories" on the rail flies to the organizer; Escape brings the camera home and the rail back.
+  const rail = page.getByRole('navigation', { name: 'Desk shortcuts' });
+  await rail.getByRole('button', { name: 'Categories' }).click();
+  await expect(page.getByRole('dialog')).toBeVisible();
+  await closePanel(page);
+  await expect(rail.getByRole('button', { name: 'Tasks', exact: true })).toBeEnabled();
 });
 
 test('a forgotten password is reset with an emailed code, and the old one stops working (AUTH-8, AUTH-9)', async ({ page }) => {
   const email = unique('reset');
   await signUp(page, 'Forgetful', email);
-  await page.getByRole('button', { name: 'Sign out' }).click();
+  await signOut(page);
   await openSignIn(page);
 
   await page.getByLabel('Email').fill(email);
@@ -100,9 +133,9 @@ test('a forgotten password is reset with an emailed code, and the old one stops 
   await page.getByLabel('6-digit code').fill(await latestCode(email));
   await page.getByLabel('New password', { exact: true }).fill('Brand-new#Pass9');
   await page.getByRole('button', { name: 'Save and open my desk' }).click();
-  await expect(page.getByRole('heading', { name: 'Your tasks' })).toBeVisible();
+  await openTasks(page);
 
-  await page.getByRole('button', { name: 'Sign out' }).click();
+  await signOut(page);
   await openSignIn(page);
   await page.getByLabel('Email').fill(email);
   await page.getByLabel('Password', { exact: true }).fill(PASSWORD);
@@ -122,7 +155,7 @@ test('session cookies are invisible to page scripts', async ({ page }) => {
 test('a wrong password gets one generic message', async ({ page }) => {
   const email = unique('wrong');
   await signUp(page, 'Wrong', email);
-  await page.getByRole('button', { name: 'Sign out' }).click();
+  await signOut(page);
   await openSignIn(page);
   await page.getByLabel('Email').fill(email);
   await page.getByLabel('Password', { exact: true }).fill('not-the-password');
