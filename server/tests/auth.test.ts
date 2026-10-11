@@ -5,7 +5,7 @@ import { CategoryModel } from '../src/models/Category.js';
 import { PriorityModel } from '../src/models/Priority.js';
 import { RefreshTokenModel } from '../src/models/RefreshToken.js';
 import { UserModel } from '../src/models/User.js';
-import { app, Client, cookieFrom, ORIGIN, useDb } from './helpers.js';
+import { app, Client, codeFor, cookieFrom, ORIGIN, useDb } from './helpers.js';
 
 useDb();
 
@@ -75,13 +75,22 @@ describe('CSRF and origin checks', () => {
 });
 
 describe('sign in', () => {
-  it('signs in with the right password', async () => {
+  it('asks for an emailed code after the right password, and only that code opens the session (AUTH-6)', async () => {
     const u = await Client.signedUp();
     const c = new Client();
     await c.getCsrf();
-    const res = await c.post('/api/auth/login', { email: u.email, password: u.password });
+    const step1 = await c.post('/api/auth/login', { email: u.email, password: u.password });
+    expect(step1.status).toBe(200);
+    expect(step1.body).toMatchObject({ otpRequired: true, expiresInSec: 600, resendInSec: 60 });
+    expect(step1.body.user).toBeUndefined();
+    expect(step1.body.email).not.toBe(u.email); // masked
+    expect(cookieFrom(step1, 'tf_at')).toBeUndefined(); // no session yet
+    expect((await c.get('/api/auth/me')).status).toBe(401);
+
+    const res = await c.post('/api/auth/login/verify', { code: await codeFor(u.email) });
     expect(res.status).toBe(200);
     expect(res.body.user.email).toBe(u.email);
+    expect((await c.get('/api/auth/me')).status).toBe(200);
   });
 
   it('gives the same answer for a wrong password and an unknown email', async () => {

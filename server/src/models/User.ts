@@ -9,6 +9,9 @@ const userSchema = new Schema(
     /** Consecutive failed sign-ins and the time the account unlocks after too many. */
     failedLogins: { type: Number, default: 0, select: false },
     lockedUntil: { type: Date, default: null, select: false },
+    /** How many code emails this account was sent in the current hour, so nobody can flood an inbox. */
+    codeEmailsSent: { type: Number, default: 0, select: false },
+    codeEmailsWindowStart: { type: Date, default: null, select: false },
   },
   { timestamps: true },
 );
@@ -21,6 +24,8 @@ userSchema.set('toJSON', {
     delete ret.passwordHash;
     delete ret.failedLogins;
     delete ret.lockedUntil;
+    delete ret.codeEmailsSent;
+    delete ret.codeEmailsWindowStart;
     return ret;
   },
 });

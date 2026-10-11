@@ -17,3 +17,7 @@ test-results/
 blob-report/
 # TypeScript build info
 *.tsbuildinfo
+
+# Emails written by MAIL_TRANSPORT=file (local dev and end-to-end tests)
+.mail-outbox/
+web/e2e/.outbox/

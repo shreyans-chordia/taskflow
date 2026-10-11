@@ -70,7 +70,18 @@ function refreshSession(): Promise<boolean> {
   return refreshing;
 }
 
-const NO_RETRY = new Set(['/auth/login', '/auth/signup', '/auth/refresh', '/auth/csrf', '/auth/logout']);
+// A 401 from these means "wrong credentials or code", not "session expired", so they never trigger a refresh.
+const NO_RETRY = new Set([
+  '/auth/login',
+  '/auth/login/verify',
+  '/auth/otp/resend',
+  '/auth/password/forgot',
+  '/auth/password/reset',
+  '/auth/signup',
+  '/auth/refresh',
+  '/auth/csrf',
+  '/auth/logout',
+]);
 
 export async function api<T>(method: Method, path: string, body?: unknown): Promise<T> {
   let res = await raw(method, path, body);

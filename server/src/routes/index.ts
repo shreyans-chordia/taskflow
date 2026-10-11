@@ -4,7 +4,7 @@ import * as categories from '../controllers/categories.controller.js';
 import * as priorities from '../controllers/priorities.controller.js';
 import * as tasks from '../controllers/tasks.controller.js';
 import { requireAuth } from '../middleware/auth.js';
-import { authLimiter } from '../middleware/rateLimit.js';
+import { authLimiter, codeEmailLimiter } from '../middleware/rateLimit.js';
 
 /** Express 5 forwards rejected promises from async handlers to the error handler, so no wrapper is needed. */
 export const api = Router();
@@ -17,6 +17,10 @@ const a = Router();
 a.get('/csrf', auth.csrf);
 a.post('/signup', authLimiter, auth.signup);
 a.post('/login', authLimiter, auth.login);
+a.post('/login/verify', authLimiter, auth.verifyLogin);
+a.post('/otp/resend', codeEmailLimiter, auth.resendCode);
+a.post('/password/forgot', codeEmailLimiter, auth.forgotPassword);
+a.post('/password/reset', authLimiter, auth.resetPassword);
 a.post('/refresh', auth.refresh);
 a.post('/logout', auth.logout);
 a.post('/logout-all', requireAuth, auth.logoutAll);

@@ -14,14 +14,15 @@ calendar, categories are trays on a shelf, and a Pomodoro clock ticks on the des
 | API | Node.js 20+, Express 5, TypeScript |
 | Data | MongoDB with Mongoose 8 |
 | Validation | zod 4 (strict schemas on every request) |
-| Auth | bcrypt, 15-minute JWT access token + rotating refresh token, both in HttpOnly cookies, CSRF tokens |
+| Auth | bcrypt, two-step sign-in with emailed one-time codes, password reset by code, 15-minute JWT access token + rotating refresh token in HttpOnly cookies, CSRF tokens |
+| Email | Nodemailer over SMTP (any provider, e.g. Gmail with an App Password) |
 | Web | React 19, TypeScript, Vite 7, TanStack Query |
 | Tests | Vitest, Supertest, mongodb-memory-server (API) · Vitest + Testing Library (web) · Playwright (end to end) |
 | CI | GitHub Actions: lint, typecheck, unit and integration tests, build, npm audit, Playwright against MongoDB 7 |
 
 ## Security highlights
 
-Refresh-token rotation with reuse detection, double-submit CSRF protection with an Origin allow-list, account lockout and
+Two-step sign-in with emailed one-time codes, enumeration-proof password reset, refresh-token rotation with reuse detection, double-submit CSRF protection with an Origin allow-list, account lockout and
 rate limiting, timing-safe sign-in, NoSQL-injection-proof queries, strict per-account data isolation (tested), Helmet
 headers and validated configuration. Details and the threat model: [`docs/SECURITY.md`](docs/SECURITY.md).
 
@@ -45,7 +46,9 @@ headers and validated configuration. Details and the threat model: [`docs/SECURI
    ```powershell
    npm run dev
    ```
-   Check `http://localhost:4000/api/health` returns `{"ok":true}`.
+   Check `http://localhost:4000/api/health` returns `{"ok":true}`. Sign-in now asks for a 6-digit code after the
+   password. With the default `MAIL_TRANSPORT=console` no email is sent: the code appears in this PowerShell window.
+   To receive real emails, see [Sending real email](#sending-real-email).
 5. Run the tests (no Docker needed, they start their own MongoDB):
    ```powershell
    npm test
@@ -62,6 +65,26 @@ headers and validated configuration. Details and the threat model: [`docs/SECURI
    npx playwright install chromium
    npm run e2e
    ```
+
+## Sending real email
+
+Sign-in codes and password reset codes go out over SMTP. With a Gmail account:
+
+1. Turn on 2-Step Verification for the Google account (an App Password needs it).
+2. Create an App Password: Google Account → Security → 2-Step Verification → App passwords. Copy the 16 letters.
+3. In `server/.env` set:
+   ```
+   MAIL_TRANSPORT=smtp
+   SMTP_HOST=smtp.gmail.com
+   SMTP_PORT=587
+   SMTP_SECURE=false
+   SMTP_USER=you@gmail.com
+   SMTP_PASS=the16letterapppassword
+   MAIL_FROM=TaskFlow <you@gmail.com>
+   ```
+4. Restart `npm run dev`. Never commit `.env`; the App Password can send mail as you.
+
+In production the API refuses to start without SMTP settings, so sign-in can never silently stop working.
 
 ## API
 

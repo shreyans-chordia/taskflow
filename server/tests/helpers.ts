@@ -4,6 +4,7 @@ import { afterAll, beforeAll, beforeEach } from 'vitest';
 import { createApp } from '../src/app.js';
 import { env } from '../src/config/env.js';
 import { connectDb } from '../src/db/connect.js';
+import { outbox } from '../src/services/mailer.js';
 
 export const app = createApp();
 export const ORIGIN = 'http://localhost:5173';
@@ -15,6 +16,7 @@ export function useDb() {
     await Promise.all(Object.values(mongoose.models).map((m) => m.syncIndexes()));
   });
   beforeEach(async () => {
+    outbox.length = 0;
     const collections = await mongoose.connection.db!.collections();
     await Promise.all(collections.map((c) => c.deleteMany({})));
   });
@@ -67,6 +69,24 @@ export class Client {
     return Object.assign(c, { email, password, user: res.body.user as { id: string; name: string; email: string } });
   }
 }
+
+/**
+ * The 6-digit code in the newest email to `to`. Some codes are sent in the background (forgot password),
+ * so this waits briefly for the email to land.
+ */
+export async function codeFor(to: string, timeoutMs = 2000): Promise<string> {
+  const end = Date.now() + timeoutMs;
+  for (;;) {
+    const mail = outbox.findLast((m) => m.to === to);
+    const code = mail?.text.match(/\b(\d{6})\b/)?.[1];
+    if (code) return code;
+    if (Date.now() > end) throw new Error(`no code email for ${to}`);
+    await new Promise((r) => setTimeout(r, 20));
+  }
+}
+
+/** Lets background work (a code email that is sent after the response) finish before checking it did not happen. */
+export const settle = () => new Promise((r) => setTimeout(r, 150));
 
 /** Reads a cookie value out of a Set-Cookie header list. */
 export function cookieFrom(res: request.Response, name: string): string | undefined {

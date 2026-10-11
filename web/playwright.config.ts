@@ -1,3 +1,4 @@
+import path from 'node:path';
 import { defineConfig, devices } from '@playwright/test';
 
 /**
@@ -10,6 +11,9 @@ const WEB_PORT = 5174;
 const API_PORT = 4100;
 const WEB_URL = `http://localhost:${WEB_PORT}`;
 const ci = !!process.env.CI;
+// The API writes each email here as JSON (MAIL_TRANSPORT=file), so the specs can read sign-in and reset codes.
+const OUTBOX = path.join(import.meta.dirname, 'e2e', '.outbox');
+process.env.E2E_OUTBOX = OUTBOX;
 
 export default defineConfig({
   testDir: './e2e',
@@ -49,6 +53,8 @@ export default defineConfig({
         JWT_ACCESS_SECRET: 'e2e-only-secret-not-used-anywhere-else-0123456789',
         BCRYPT_COST: '10',
         LOG_LEVEL: 'warn',
+        MAIL_TRANSPORT: 'file',
+        MAIL_OUTBOX_DIR: OUTBOX,
       },
     },
     {

@@ -6,6 +6,15 @@ export interface User {
   createdAt: string;
 }
 
+/** Sent when a code was emailed: the password step of sign-in, or "Forgot password?". */
+export interface CodeChallenge {
+  otpRequired: true;
+  /** Masked, e.g. "s••••••s@example.com". */
+  email: string;
+  expiresInSec: number;
+  resendInSec: number;
+}
+
 export interface Category {
   id: string;
   name: string;
