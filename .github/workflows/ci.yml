@@ -105,6 +105,13 @@ jobs:
         run: |
           set -o pipefail
           npm run e2e 2>&1 | tee e2e.log
+      - name: List e2e results as an annotation
+        if: always()
+        working-directory: web
+        run: |
+          [ -f e2e.log ] || exit 0
+          body=$(grep -E '✓|✘|passed|failed|flaky|skipped' e2e.log | sed 's/\x1b\[[0-9;]*m//g' | sed ':a;N;$!ba;s/%/%25/g;s/\r//g;s/\n/%0A/g')
+          echo "::notice title=E2E results::$body"
       - name: Show failing e2e output as an annotation
         if: failure()
         working-directory: web
