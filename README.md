@@ -3,9 +3,10 @@
 A personal task manager whose home screen is a 3D desk: tasks are sticky notes on a corkboard, deadlines sit on a wall
 calendar, categories are trays on a shelf, and a Pomodoro clock ticks on the desk.
 
-> Status: the secure REST API (`server/`) and the React front end (`web/`) are connected: sign-up, sign-in and tasks
-> run on the real API and MongoDB. The 3D desk from the prototype (`prototype/room.html`) is being ported to React Three
-> Fiber next.
+> Status: the secure REST API (`server/`) and the React front end (`web/`) are connected, and the home screen is the
+> live 3D desk (React Three Fiber), drawn from your real tasks. Clicking an object flies the camera to it and opens your
+> task list; the dedicated panels (calendar, search, weekly review, Pomodoro) are being ported from the prototype next.
+> Browsers without WebGL get the same task list as a plain 2D page.
 
 ## Stack
 
@@ -17,6 +18,7 @@ calendar, categories are trays on a shelf, and a Pomodoro clock ticks on the des
 | Auth | bcrypt, two-step sign-in with emailed one-time codes, password reset by code, 15-minute JWT access token + rotating refresh token in HttpOnly cookies, CSRF tokens |
 | Email | Nodemailer over SMTP (any provider, e.g. Gmail with an App Password) |
 | Web | React 19, TypeScript, Vite 7, TanStack Query |
+| 3D | three.js + React Three Fiber; every texture is painted procedurally on canvases (no image or model files) |
 | Tests | Vitest, Supertest, mongodb-memory-server (API) · Vitest + Testing Library (web) · Playwright (end to end) |
 | CI | GitHub Actions: lint, typecheck, unit and integration tests, build, npm audit, Playwright against MongoDB 7 |
 

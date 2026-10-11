@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { ApiError } from '../api/client';
 import { categoriesApi, prioritiesApi, tasksApi } from '../api/endpoints';
 import type { Priority, Task } from '../api/types';
@@ -8,11 +8,51 @@ import { Logo, Ring } from '../components/Ring';
 import './workbench.css';
 
 /**
- * A plain task list on the real API. It proves the whole path (React → API → MongoDB) works end to end
- * and is what the 3D desk's corkboard will sit on top of in phase 2.
+ * The 2D task list page. It is the fallback when a browser cannot draw the 3D desk, and the same
+ * <TaskList> is what the desk's panel shows when you click the corkboard.
  */
 export function Workbench({ onToggleTheme }: { onToggleTheme: () => void }) {
   const { user, logout } = useAuth();
+  return (
+    <div className="wb">
+      <header className="wb-bar">
+        <div className="wb-badge glass">
+          <Logo size={32} />
+          <b>TaskFlow</b>
+        </div>
+        <div className="wb-account glass">
+          <span>
+            Signed in as <strong>{user?.name}</strong>
+          </span>
+          <button type="button" className="btn btn-ghost" onClick={onToggleTheme}>
+            Lamp
+          </button>
+          <button type="button" className="btn" onClick={() => void logout()}>
+            Sign out
+          </button>
+        </div>
+      </header>
+      <main className="wb-card glass" aria-labelledby="wb-title">
+        <TaskList titleId="wb-title" />
+      </main>
+    </div>
+  );
+}
+
+export interface TaskListProps {
+  titleId: string;
+  eyebrow?: string;
+  heading?: string;
+  /** Show only tasks in this category (a tray on the organizer). */
+  categoryId?: string;
+  /** Put the cursor in the new-task field (the "Add task" key). */
+  focusAdd?: boolean;
+  /** Mark one task (the note that was clicked). */
+  highlightId?: string;
+}
+
+/** Add, tick and delete tasks on the real API (TASK-1, TASK-2, TASK-4, TASK-5, PR-1). */
+export function TaskList({ titleId, eyebrow = 'Corkboard', heading = 'Your tasks', categoryId, focusAdd, highlightId }: TaskListProps) {
   const qc = useQueryClient();
   const tasks = useQuery({ queryKey: ['tasks'], queryFn: () => tasksApi.list() });
   const priorities = useQuery({ queryKey: ['priorities'], queryFn: prioritiesApi.list });
@@ -20,6 +60,11 @@ export function Workbench({ onToggleTheme }: { onToggleTheme: () => void }) {
   const [title, setTitle] = useState('');
   const [priorityId, setPriorityId] = useState('');
   const [error, setError] = useState('');
+  const addRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (focusAdd) addRef.current?.focus();
+  }, [focusAdd]);
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ['tasks'] });
   const create = useMutation({ mutationFn: tasksApi.create, onSuccess: invalidate });
@@ -43,6 +88,7 @@ export function Workbench({ onToggleTheme }: { onToggleTheme: () => void }) {
   const levels = priorities.data ?? [];
   const byId = new Map(levels.map((p) => [p.id, p]));
   const catName = new Map((categories.data ?? []).map((c) => [c.id, c.name]));
+  const shown = (tasks.data ?? []).filter((t) => !categoryId || t.categoryIds.includes(categoryId));
 
   async function add(e: FormEvent) {
     e.preventDefault();
@@ -52,7 +98,7 @@ export function Workbench({ onToggleTheme }: { onToggleTheme: () => void }) {
     }
     setError('');
     try {
-      await create.mutateAsync({ title: title.trim(), ...(priorityId ? { priorityId } : {}) });
+      await create.mutateAsync({ title: title.trim(), ...(priorityId ? { priorityId } : {}), ...(categoryId ? { categoryIds: [categoryId] } : {}) });
       setTitle('');
     } catch (err) {
       setError(err instanceof ApiError ? Object.values(err.fields)[0] ?? err.message : 'Could not save the task.');
@@ -60,79 +106,61 @@ export function Workbench({ onToggleTheme }: { onToggleTheme: () => void }) {
   }
 
   return (
-    <div className="wb">
-      <header className="wb-bar">
-        <div className="wb-badge glass">
-          <Logo size={32} />
-          <b>TaskFlow</b>
-        </div>
-        <div className="wb-account glass">
-          <span>
-            Signed in as <strong>{user?.name}</strong>
-          </span>
-          <button type="button" className="btn btn-ghost" onClick={onToggleTheme}>
-            Lamp
-          </button>
-          <button type="button" className="btn" onClick={() => void logout()}>
-            Sign out
-          </button>
-        </div>
-      </header>
-
-      <main className="wb-card glass" aria-labelledby="wb-title">
-        <div className="eyebrow">Corkboard</div>
-        <h1 id="wb-title" className="title">Your tasks</h1>
-        <form className="wb-add" onSubmit={add} noValidate>
-          <div className="field" style={{ flex: 1 }}>
-            <label className="label" htmlFor="wb-new">New task</label>
-            <div className="field-input">
-              <input id="wb-new" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Submit Lab 7 record" aria-invalid={error ? true : undefined} aria-describedby={error ? 'wb-err' : undefined} />
-            </div>
+    <>
+      <div className="eyebrow">{eyebrow}</div>
+      <h1 id={titleId} className="title" tabIndex={-1}>
+        {heading}
+      </h1>
+      <form className="wb-add" onSubmit={add} noValidate>
+        <div className="field" style={{ flex: 1 }}>
+          <label className="label" htmlFor={`${titleId}-new`}>New task</label>
+          <div className="field-input">
+            <input ref={addRef} id={`${titleId}-new`} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Submit Lab 7 record" aria-invalid={error ? true : undefined} aria-describedby={error ? `${titleId}-err` : undefined} />
           </div>
-          <div className="field">
-            <label className="label" htmlFor="wb-pr">Priority</label>
-            <select id="wb-pr" className="wb-select" value={priorityId} onChange={(e) => setPriorityId(e.target.value)}>
-              <option value="">Default</option>
-              {levels.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <button type="submit" className="btn btn-primary" disabled={create.isPending}>
-            Pin it
-          </button>
-        </form>
-        {error && <p className="field-error" id="wb-err" role="alert">{error}</p>}
-
-        {tasks.isPending ? (
-          <p className="wb-note">Loading your tasks…</p>
-        ) : tasks.isError ? (
-          <p className="wb-note" role="alert">Could not load your tasks. {tasks.error instanceof ApiError ? tasks.error.message : ''}</p>
-        ) : tasks.data.length === 0 ? (
-          <p className="wb-empty">Nothing pinned yet. Add your first task above.</p>
-        ) : (
-          <ul className="wb-list" aria-label="Tasks">
-            {tasks.data.map((t) => (
-              <TaskRow key={t.id} task={t} level={byId.get(t.priorityId)} levels={levels.length} categories={t.categoryIds.map((c) => catName.get(c) ?? '').filter(Boolean)}
-                onToggle={(done) => update.mutateAsync({ id: t.id, done }).catch(() => undefined)} onDelete={() => remove.mutate(t.id)} />
+        </div>
+        <div className="field">
+          <label className="label" htmlFor={`${titleId}-pr`}>Priority</label>
+          <select id={`${titleId}-pr`} className="wb-select" value={priorityId} onChange={(e) => setPriorityId(e.target.value)}>
+            <option value="">Default</option>
+            {levels.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
             ))}
-          </ul>
-        )}
-      </main>
-    </div>
+          </select>
+        </div>
+        <button type="submit" className="btn btn-primary" disabled={create.isPending}>
+          Pin it
+        </button>
+      </form>
+      {error && <p className="field-error" id={`${titleId}-err`} role="alert">{error}</p>}
+
+      {tasks.isPending ? (
+        <p className="wb-note">Loading your tasks…</p>
+      ) : tasks.isError ? (
+        <p className="wb-note" role="alert">Could not load your tasks. {tasks.error instanceof ApiError ? tasks.error.message : ''}</p>
+      ) : shown.length === 0 ? (
+        <p className="wb-empty">{categoryId ? 'Nothing in this tray yet.' : 'Nothing pinned yet. Add your first task above.'}</p>
+      ) : (
+        <ul className="wb-list" aria-label="Tasks">
+          {shown.map((t) => (
+            <TaskRow key={t.id} task={t} highlight={t.id === highlightId} level={byId.get(t.priorityId)} levels={levels.length} categories={t.categoryIds.map((c) => catName.get(c) ?? '').filter(Boolean)}
+              onToggle={(done) => update.mutateAsync({ id: t.id, done }).catch(() => undefined)} onDelete={() => remove.mutate(t.id)} />
+          ))}
+        </ul>
+      )}
+    </>
   );
 }
 
-function TaskRow({ task, level, levels, categories, onToggle, onDelete }: { task: Task; level?: Priority; levels: number; categories: string[]; onToggle: (done: boolean) => Promise<unknown>; onDelete: () => void }) {
+function TaskRow({ task, highlight, level, levels, categories, onToggle, onDelete }: { task: Task; highlight?: boolean; level?: Priority; levels: number; categories: string[]; onToggle: (done: boolean) => Promise<unknown>; onDelete: () => void }) {
   // While a save is in flight the box shows what was clicked, set in the same event as the click
   // (React Query's cache update lands a tick later, which made the box flicker back). When the save
   // settles the box follows the server data again, which is the rolled-back value if it failed.
   const [pending, setPending] = useState<boolean | null>(null);
   const done = pending ?? task.done;
   return (
-    <li className={`wb-row${done ? ' done' : ''}`}>
+    <li className={`wb-row${done ? ' done' : ''}${highlight ? ' picked' : ''}`} aria-current={highlight ? 'true' : undefined}>
       <input
         type="checkbox"
         checked={done}

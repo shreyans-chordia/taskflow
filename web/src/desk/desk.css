@@ -1,0 +1,26 @@
+/* The 3D desk fills the screen; a hover label, the shortcut rail and a loading cover sit on top. */
+.desk { position: fixed; inset: 0; background: var(--bg); touch-action: pan-y }
+.desk-canvas { position: absolute !important; inset: 0; touch-action: none }
+.desk-canvas canvas { display: block }
+
+.desk-tag { position: absolute; z-index: 5; transform: translate(-50%, calc(-100% - 10px)); pointer-events: none; padding: 7px 10px; border-radius: 8px; font: 600 12.5px/1 var(--f-ui); white-space: nowrap; box-shadow: 0 12px 30px -10px rgba(18, 10, 2, .45), inset 1.5px 1.5px 0 var(--g-hi), inset -1px -1px 0 var(--g-lo) }
+.desk-tag small { display: block; margin-top: 3px; font-weight: 500; font-size: 11px; color: var(--g-sub) }
+
+.desk-rail { position: absolute; z-index: 5; left: 16px; right: 16px; bottom: max(14px, env(safe-area-inset-bottom, 0px)); display: flex; justify-content: center; pointer-events: none }
+.desk-rail-inner { pointer-events: auto; display: flex; gap: 4px; max-width: 100%; overflow-x: auto; padding: 6px; border-radius: 14px; scrollbar-width: none; box-shadow: 0 12px 30px -10px rgba(18, 10, 2, .45), inset 1.5px 1.5px 0 var(--g-hi), inset -1px -1px 0 var(--g-lo) }
+.desk-rail-inner::-webkit-scrollbar { display: none }
+.desk-rail button { flex: 0 0 auto; min-height: 40px; padding: 9px 11px; border: 0; border-radius: 10px; background: transparent; color: var(--g-ink); font: 600 13px/1 var(--f-ui); white-space: nowrap; cursor: pointer }
+.desk-rail button:hover:not(:disabled) { background: var(--g-field) }
+.desk-rail button:disabled { opacity: .5; cursor: default }
+
+.desk-loading { position: absolute; inset: 0; z-index: 6; display: grid; place-items: center; background: var(--bg); color: #E9E2D6; font: 500 15px var(--f-ui); transition: opacity 420ms ease-out }
+.desk-loading.gone { opacity: 0; pointer-events: none }
+
+@media (max-width: 600px) {
+  .desk-rail-inner { -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 36px), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 36px), transparent); scroll-snap-type: x proximity; padding-right: 30px }
+  .desk-rail button { scroll-snap-align: start }
+}
+
+/* Light quality (no graphics card): solid paper instead of live frosted glass, which the CPU cannot blur fast enough. */
+:root[data-quality="light"] .glass { background: var(--g-solid); -webkit-backdrop-filter: none; backdrop-filter: none }
+:root[data-quality="light"] .panel { -webkit-backdrop-filter: none; backdrop-filter: none; animation: none; background: rgba(0, 0, 0, .28) }

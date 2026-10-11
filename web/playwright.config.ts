@@ -11,6 +11,8 @@ const WEB_PORT = 5174;
 const API_PORT = 4100;
 const WEB_URL = `http://localhost:${WEB_PORT}`;
 const ci = !!process.env.CI;
+// Optional: point at an already-installed Chromium instead of running `npx playwright install`.
+const executable = process.env.PW_CHROMIUM_PATH ? { executablePath: process.env.PW_CHROMIUM_PATH } : {};
 // The API writes each email here as JSON (MAIL_TRANSPORT=file), so the specs can read sign-in and reset codes.
 const OUTBOX = path.join(import.meta.dirname, 'e2e', '.outbox');
 process.env.E2E_OUTBOX = OUTBOX;
@@ -29,12 +31,18 @@ export default defineConfig({
   },
   projects: [
     {
+      // The real home screen: the 3D desk. Headless Chromium draws WebGL on the CPU, and every sign-in or reload
+      // builds the room again, so the longer journeys get more time than Playwright's 30 s default.
       name: 'chromium',
-      use: {
-        ...devices['Desktop Chrome'],
-        // Optional: point at an already-installed Chromium instead of running `npx playwright install`.
-        ...(process.env.PW_CHROMIUM_PATH ? { launchOptions: { executablePath: process.env.PW_CHROMIUM_PATH } } : {}),
-      },
+      testIgnore: /no-webgl/,
+      timeout: 60_000,
+      use: { ...devices['Desktop Chrome'], launchOptions: { ...executable } },
+    },
+    {
+      // A browser with 3D switched off must get the 2D task list instead.
+      name: 'chromium-no-webgl',
+      testMatch: /no-webgl/,
+      use: { ...devices['Desktop Chrome'], launchOptions: { ...executable, args: ['--disable-3d-apis', '--disable-webgl'] } },
     },
   ],
   webServer: [

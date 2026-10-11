@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { AuthScreen } from './auth/AuthScreen';
 import { useAuth } from './auth/AuthProvider';
 import { Logo } from './components/Ring';
-import { Workbench } from './workbench/Workbench';
+import { Home, preloadDesk } from './home/Home';
 
 type Theme = 'light' | 'dark';
 const THEME_KEY = 'taskflow-theme';
@@ -21,6 +21,11 @@ export function App() {
   const { status } = useAuth();
   const [theme, setTheme] = useState<Theme>(initialTheme);
 
+  // Start downloading the 3D desk while the person signs in, so it is ready when they arrive.
+  useEffect(() => {
+    if (status === 'signedOut') preloadDesk();
+  }, [status]);
+
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
     try {
@@ -32,7 +37,7 @@ export function App() {
 
   return (
     <>
-      {/* Stand-in for the 3D room until it is ported (phase 2): a still of the desk, blurred behind the glass. */}
+      {/* Behind the sign-in glass: a still of the desk, blurred. Signed in, the live 3D desk covers it. */}
       <div className="backdrop" data-theme-img={theme} aria-hidden="true" />
       {status === 'loading' ? (
         <div className="boot" role="status">
@@ -42,7 +47,7 @@ export function App() {
       ) : status === 'signedOut' ? (
         <AuthScreen />
       ) : (
-        <Workbench onToggleTheme={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))} />
+        <Home night={theme === 'dark'} onToggleTheme={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))} />
       )}
     </>
   );
