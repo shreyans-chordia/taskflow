@@ -98,7 +98,7 @@ test('a forgotten password is reset with an emailed code, and the old one stops 
   await page.getByRole('button', { name: 'Email me a code' }).click();
   await expect(page.getByRole('heading', { name: 'Choose a new password' })).toBeVisible();
   await page.getByLabel('6-digit code').fill(await latestCode(email));
-  await page.getByLabel('New password').fill('Brand-new#Pass9');
+  await page.getByLabel('New password', { exact: true }).fill('Brand-new#Pass9');
   await page.getByRole('button', { name: 'Save and open my desk' }).click();
   await expect(page.getByRole('heading', { name: 'Your tasks' })).toBeVisible();
 
