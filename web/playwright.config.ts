@@ -31,9 +31,11 @@ export default defineConfig({
   },
   projects: [
     {
-      // The real home screen: the 3D desk (headless Chromium draws WebGL in software).
+      // The real home screen: the 3D desk. Headless Chromium draws WebGL on the CPU, and every sign-in or reload
+      // builds the room again, so the longer journeys get more time than Playwright's 30 s default.
       name: 'chromium',
       testIgnore: /no-webgl/,
+      timeout: 60_000,
       use: { ...devices['Desktop Chrome'], launchOptions: { ...executable } },
     },
     {
