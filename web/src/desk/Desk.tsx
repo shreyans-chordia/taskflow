@@ -5,6 +5,7 @@ import { CameraController } from './camera';
 import { DeskContext, TagTracker, type DeskApi, type Target } from './interaction';
 import type { DeskData } from './model';
 import { Corkboard, Keys, Lamp, Notebook, PomodoroClock, RAIL_TARGETS, Trays, WallCalendar } from './objects';
+import { isSoftwareRenderer } from './quality';
 import { Kit, color, disposeTree } from './three/kit';
 import { buildRoom } from './three/room';
 import './desk.css';
@@ -45,6 +46,15 @@ export default function Desk({ data, night, onToggleLamp, onOpen, panelOpen }: D
   const reducedMotion = useReducedMotion();
   const [fontsReady, setFontsReady] = useState(false);
   const [ready, setReady] = useState(false);
+  /** Light quality: WebGL is running on the CPU (no graphics card). See quality.ts. */
+  const [light, setLight] = useState(false);
+  useEffect(() => {
+    if (!light) return;
+    document.documentElement.dataset.quality = 'light';
+    return () => {
+      delete document.documentElement.dataset.quality;
+    };
+  }, [light]);
   const tagRef = useRef<HoverTagHandle>(null);
   const controller = useRef<CameraController | null>(null);
   const interactive = useRef(false);
@@ -148,18 +158,19 @@ export default function Desk({ data, night, onToggleLamp, onOpen, panelOpen }: D
         <Canvas
           className="desk-canvas"
           frameloop="demand"
-          shadows={{ type: THREE.PCFShadowMap }}
-          dpr={[1, 1.75]}
+          shadows={light ? false : { type: THREE.PCFShadowMap }}
+          dpr={light ? 1 : [1, 1.75]}
           gl={{ antialias: true, powerPreference: 'high-performance' }}
           camera={{ fov: 47, near: 0.05, far: 40, position: [0, 1.36, 2.85] }}
           onCreated={({ gl }) => {
             gl.toneMapping = THREE.ACESFilmicToneMapping;
+            if (isSoftwareRenderer(gl)) setLight(true);
           }}
           onPointerMissed={() => setHovered(null)}
           aria-hidden="true"
         >
           <DeskContext.Provider value={api}>
-            <Scene data={data} night={night} reducedMotion={reducedMotion} onController={onController} onEntered={onEntered} />
+            <Scene data={data} night={night} paused={panelOpen} reducedMotion={reducedMotion} onController={onController} onEntered={onEntered} />
             <TagTracker />
           </DeskContext.Provider>
         </Canvas>
@@ -220,9 +231,11 @@ function HoverTag({ ref, hidden }: { ref: React.Ref<HoverTagHandle>; hidden: boo
 }
 
 /** Everything inside the canvas: the room, the interactive objects, the camera and the theme. */
-function Scene({ data, night, reducedMotion, onController, onEntered }: {
+function Scene({ data, night, paused, reducedMotion, onController, onEntered }: {
   data: DeskData;
   night: boolean;
+  /** A panel covers the room: nothing behind the glass needs to move (and re-blur) until it closes. */
+  paused: boolean;
   reducedMotion: boolean;
   onController(c: CameraController | null): (() => void) | void;
   onEntered(): void;
@@ -257,13 +270,15 @@ function Scene({ data, night, reducedMotion, onController, onEntered }: {
     invalidate();
   }, [night, room, get, invalidate]);
 
-  // The wall clock ticks once a second, on the second.
+  // The wall clock ticks once a second, on the second, while the room is in view.
   useEffect(() => {
+    if (paused) return;
     let iv = 0;
     const tick = () => {
       room.tickClock();
       invalidate();
     };
+    tick(); // catch up after a pause
     const t = window.setTimeout(() => {
       tick();
       iv = window.setInterval(tick, 1000);
@@ -272,7 +287,7 @@ function Scene({ data, night, reducedMotion, onController, onEntered }: {
       window.clearTimeout(t);
       window.clearInterval(iv);
     };
-  }, [room, invalidate]);
+  }, [room, invalidate, paused]);
 
   // Fonts that arrived late: repaint every canvas once they are in.
   useEffect(() => {

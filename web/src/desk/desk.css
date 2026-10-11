@@ -20,3 +20,7 @@
   .desk-rail-inner { -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 36px), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 36px), transparent); scroll-snap-type: x proximity; padding-right: 30px }
   .desk-rail button { scroll-snap-align: start }
 }
+
+/* Light quality (no graphics card): solid paper instead of live frosted glass, which the CPU cannot blur fast enough. */
+:root[data-quality="light"] .glass { background: var(--g-solid); -webkit-backdrop-filter: none; backdrop-filter: none }
+:root[data-quality="light"] .panel { -webkit-backdrop-filter: none; backdrop-filter: none; animation: none; background: rgba(0, 0, 0, .28) }
