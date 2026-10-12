@@ -5,7 +5,8 @@ import { useAuth } from '../auth/AuthProvider';
 import { Logo } from '../components/Ring';
 import type { Target } from '../desk/interaction';
 import { toDeskData } from '../desk/model';
-import { TaskList, Workbench } from '../workbench/Workbench';
+import { TaskViews, type TaskView } from '../tasks/TaskViews';
+import { Workbench } from '../workbench/Workbench';
 import './home.css';
 
 // three.js is large, so the desk loads in its own chunk; the sign-in screen starts fetching it early.
@@ -72,15 +73,22 @@ function DeskHome({ night, onToggleTheme }: { night: boolean; onToggleTheme: () 
   );
 }
 
-/**
- * The panel an object opens. For now every object opens the task list, set up for what was clicked
- * (a tray filters by its category, a note marks its task, the green key focuses "New task").
- * The dedicated panels (calendar, search, weekly review, Pomodoro) replace this one by one.
- */
+/** What each desk object opens, until the calendar, search, review and Pomodoro panels have their own screens. */
+function viewFor(target: Target): TaskView {
+  const [kind, id] = target.key.split(':');
+  if (kind === 'note' && id) return { type: 'detail', id };
+  if (kind === 'add') return { type: 'form' };
+  if (kind === 'tray' && id) return { type: 'list', eyebrow: 'Category', heading: target.label, categoryId: id };
+  if (kind === 'manage') return { type: 'list', eyebrow: 'Edit or delete', heading: 'Your tasks' };
+  return { type: 'list', eyebrow: target.label, heading: 'Your tasks' };
+}
+
+/** The frosted panel an object opens over the desk. Escape, the × or a click outside closes it. */
 function Panel({ target, onClose }: { target: Target; onClose: () => void }) {
   const titleId = useId();
   const [closing, setClosing] = useState(false);
   const close = useCallback(() => setClosing(true), []);
+  const [initial] = useState(() => viewFor(target));
 
   useEffect(() => {
     if (!closing) return;
@@ -94,17 +102,10 @@ function Panel({ target, onClose }: { target: Target; onClose: () => void }) {
     return () => document.removeEventListener('keydown', onKey);
   }, [close]);
 
-  // Focus moves into the panel (to the heading, or the new-task field for "Add task").
+  // Focus moves into the panel: to the heading, or to the title field of a new task.
   useEffect(() => {
-    if (target.key !== 'add') document.getElementById(titleId)?.focus({ preventScroll: true });
-  }, [target.key, titleId]);
-
-  const [kind, id] = target.key.split(':');
-  const list =
-    kind === 'tray' ? { eyebrow: 'Category', heading: target.label, categoryId: id }
-    : kind === 'note' ? { eyebrow: 'Corkboard', heading: 'Your tasks', highlightId: id }
-    : kind === 'add' ? { eyebrow: 'Add task', heading: 'Your tasks', focusAdd: true }
-    : { eyebrow: target.label, heading: 'Your tasks' };
+    if (initial.type !== 'form') document.getElementById(titleId)?.focus({ preventScroll: true });
+  }, [initial.type, titleId]);
 
   return (
     <div className={`panel${closing ? ' closing' : ''}`} onMouseDown={(e) => e.target === e.currentTarget && close()}>
@@ -114,7 +115,7 @@ function Panel({ target, onClose }: { target: Target; onClose: () => void }) {
             <path d="M6 6L18 18M18 6L6 18" />
           </svg>
         </button>
-        <TaskList titleId={titleId} {...list} />
+        <TaskViews titleId={titleId} initial={initial} onExit={close} />
       </div>
     </div>
   );

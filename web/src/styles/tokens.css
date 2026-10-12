@@ -3,6 +3,9 @@
   color-scheme: light;
   --bg: #1E1A17;
   --g-ink: #2B2E33;
+  /* done = a hand-drawn scribble through the words, not a ruler-straight line (--sq-paper stays dark: notes are always paper) */
+  --sq: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='12' viewBox='0 0 48 12'%3E%3Cpath d='M0 6.5C3.5 2.6 6.8 10.2 11.2 6.1S17.6 1.8 22 6.6S29.8 10.8 33.6 5.4S40.6 2.9 44.2 7S47 6.8 48 6.5' fill='none' stroke='%232B2E33' stroke-width='1.9' stroke-linecap='round' stroke-opacity='.9'/%3E%3C/svg%3E");
+  --sq-paper: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='12' viewBox='0 0 48 12'%3E%3Cpath d='M0 6.5C3.5 2.6 6.8 10.2 11.2 6.1S17.6 1.8 22 6.6S29.8 10.8 33.6 5.4S40.6 2.9 44.2 7S47 6.8 48 6.5' fill='none' stroke='%232B2E33' stroke-width='1.9' stroke-linecap='round' stroke-opacity='.9'/%3E%3C/svg%3E");
   --g-sub: #33373E;
   --g-tint: rgba(253, 249, 240, .6);
   --g-sheen: rgba(255, 255, 255, .34);
@@ -37,6 +40,7 @@
   color-scheme: dark;
   --bg: #0E0F13;
   --g-ink: #ECE6DA;
+  --sq: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='12' viewBox='0 0 48 12'%3E%3Cpath d='M0 6.5C3.5 2.6 6.8 10.2 11.2 6.1S17.6 1.8 22 6.6S29.8 10.8 33.6 5.4S40.6 2.9 44.2 7S47 6.8 48 6.5' fill='none' stroke='%23ECE6DA' stroke-width='1.9' stroke-linecap='round' stroke-opacity='.9'/%3E%3C/svg%3E");
   --g-sub: #C7C0B3;
   --g-tint: rgba(30, 30, 34, .58);
   --g-sheen: rgba(255, 255, 255, .07);

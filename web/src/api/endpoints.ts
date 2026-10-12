@@ -38,8 +38,11 @@ export const tasksApi = {
 
 export const categoriesApi = {
   list: () => api<{ categories: Category[] }>('GET', '/categories').then((r) => r.categories),
+  create: (b: { name: string; color: string }) => api<{ category: Category }>('POST', '/categories', b).then((r) => r.category),
 };
 
 export const prioritiesApi = {
   list: () => api<{ priorities: Priority[] }>('GET', '/priorities').then((r) => r.priorities),
+  /** `position` 0 is the most important; the levels below it move down one. */
+  create: (b: { name: string; color: string; position?: number }) => api<{ priority: Priority }>('POST', '/priorities', b).then((r) => r.priority),
 };

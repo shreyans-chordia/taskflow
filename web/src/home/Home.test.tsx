@@ -10,9 +10,9 @@ import { Home } from './Home';
 
 vi.mock('../api/endpoints', () => ({
   authApi: { me: vi.fn(), signup: vi.fn(), login: vi.fn(), verifyLogin: vi.fn(), resendCode: vi.fn(), forgotPassword: vi.fn(), resetPassword: vi.fn(), logout: vi.fn() },
-  tasksApi: { list: vi.fn(), create: vi.fn(), update: vi.fn(), remove: vi.fn() },
-  categoriesApi: { list: vi.fn() },
-  prioritiesApi: { list: vi.fn() },
+  tasksApi: { list: vi.fn(), create: vi.fn(), update: vi.fn(), remove: vi.fn(), addSubtask: vi.fn(), updateSubtask: vi.fn(), removeSubtask: vi.fn() },
+  categoriesApi: { list: vi.fn(), create: vi.fn() },
+  prioritiesApi: { list: vi.fn(), create: vi.fn() },
 }));
 
 // jsdom cannot draw WebGL, so the 3D desk is replaced by buttons that "click" its objects.
@@ -92,17 +92,21 @@ describe('<Home> on a browser that can draw 3D', () => {
     expect(screen.queryByText('Lab record')).not.toBeInTheDocument();
   });
 
-  it('a note marks its own task in the list (TASK-3)', async () => {
+  it('a note opens its own task (TASK-3)', async () => {
     renderHome();
     await userEvent.click(await screen.findByRole('button', { name: 'gym note' }));
-    const row = (await screen.findByText('Gym session')).closest('li');
-    expect(row).toHaveAttribute('aria-current', 'true');
+    expect(await screen.findByRole('dialog', { name: 'Gym session' })).toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: 'Mark as complete' })).toBeInTheDocument();
+    // Back from a task opened straight from the desk returns to the desk.
+    await userEvent.click(screen.getByRole('button', { name: /Back to the desk/ }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
   });
 
-  it('the green key puts the cursor in "New task" (TASK-1)', async () => {
+  it('the green key opens the full form with the cursor in Title (TASK-1)', async () => {
     renderHome();
     await userEvent.click(await screen.findByRole('button', { name: 'green key' }));
-    await waitFor(() => expect(screen.getByLabelText('New task')).toHaveFocus());
+    expect(await screen.findByRole('dialog', { name: 'New task' })).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByLabelText('Title')).toHaveFocus());
   });
 
   it('the lamp switches the theme', async () => {

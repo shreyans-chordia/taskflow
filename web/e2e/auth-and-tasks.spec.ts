@@ -76,6 +76,7 @@ async function openSignIn(page: Page) {
 }
 
 test('a new user signs up, pins a task, and finds it again after signing back in (TASK-1, TASK-2, TASK-4, PR-1)', async ({ page }) => {
+  test.slow(); // sign-up, two reloads and a sign-in each rebuild the room on CI's CPU-only renderer
   const email = unique('flow');
   await signUp(page, 'Shreyans', email);
   await expect(page.getByText('Signed in as')).toContainText('Shreyans');
@@ -103,6 +104,59 @@ test('a new user signs up, pins a task, and finds it again after signing back in
   await signOut(page);
   await signIn(page, email);
   await expect(page.getByText('Submit Lab 7 record')).toBeVisible();
+});
+
+test('a task gets every detail, a checklist and an edit, survives a reload, then is deleted (TASK-3, TASK-5, TASK-6, DL-1, CAT-2, SUB-1)', async ({ page }) => {
+  test.slow();
+  await signUp(page, 'Details', unique('detail'));
+  const panel = page.getByRole('dialog');
+
+  // The full form, from the list.
+  await panel.getByRole('button', { name: '+ Add task' }).click();
+  await expect(panel.getByRole('heading', { name: 'New task' })).toBeVisible();
+  await panel.getByLabel('Title').fill('Write Lab 8 record');
+  await panel.getByLabel('Description · optional').fill('State and interaction diagrams.');
+  await panel.getByRole('button', { name: 'Study', exact: true }).click();
+  await panel.getByRole('button', { name: 'Career', exact: true }).click();
+  await panel.getByRole('radio', { name: 'High' }).click();
+  await panel.getByLabel('Deadline · optional').fill('2030-01-15');
+  await panel.getByLabel('Time · optional').fill('18:30');
+  await panel.getByRole('button', { name: 'Pin to corkboard' }).click();
+  await expect(panel.getByRole('status')).toContainText('Pinned “Write Lab 8 record”');
+  await panel.getByRole('button', { name: 'Done' }).click();
+
+  // Open it from the list: everything that was set is there.
+  await panel.getByRole('button', { name: /^Write Lab 8 record/ }).click();
+  await expect(panel.getByRole('heading', { name: 'Write Lab 8 record', exact: true })).toBeVisible();
+  // exact: the sticky-note preview repeats the deadline inside a longer line.
+  await expect(panel.getByText('High priority', { exact: true })).toBeVisible();
+  await expect(panel.getByText('State and interaction diagrams.', { exact: true })).toBeVisible();
+  await expect(panel.getByText('Due Tue 15 Jan 6:30 PM', { exact: true })).toBeVisible();
+
+  // A checklist item, ticked.
+  await panel.getByLabel('New checklist item').fill('Draw the state diagram');
+  await panel.getByLabel('New checklist item').press('Enter');
+  await panel.getByRole('checkbox', { name: 'Draw the state diagram' }).check();
+  await expect(panel.getByText('Checklist · 1 of 1 done')).toBeVisible();
+
+  // It is all on the server: a reload brings it back.
+  await page.reload();
+  await openTasks(page);
+  await panel.getByRole('button', { name: /^Write Lab 8 record/ }).click();
+  await expect(panel.getByText('Checklist · 1 of 1 done', { exact: true })).toBeVisible();
+  await expect(panel.getByRole('checkbox', { name: 'Draw the state diagram' })).toBeChecked();
+
+  // Edit the title; saving returns to the task.
+  await panel.getByRole('button', { name: 'Edit task' }).click();
+  await panel.getByLabel('Title').fill('Write Lab 8 record (final)');
+  await panel.getByRole('button', { name: 'Save changes' }).click();
+  await expect(panel.getByRole('heading', { name: 'Write Lab 8 record (final)', exact: true })).toBeVisible();
+
+  // Delete asks first, then lands back on the list.
+  await panel.getByRole('button', { name: 'Delete', exact: true }).click();
+  await panel.getByRole('button', { name: 'Delete task' }).click();
+  await expect(panel.getByRole('status')).toContainText('Deleted “Write Lab 8 record (final)”.');
+  await expect(panel.getByRole('button', { name: /^Write Lab 8 record/ })).toHaveCount(0);
 });
 
 test('the desk opens a tray as that category and closes back to the room (CAT-2)', async ({ page }) => {
