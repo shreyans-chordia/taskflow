@@ -104,7 +104,10 @@ export default function Desk({ data, night, onToggleLamp, onOpen, panelOpen }: D
       void (async () => {
         if (cam?.atObject) await new Promise((r) => setTimeout(r, reducedMotion ? 0 : 90)).then(() => cam.flyHome());
         interactive.current = true;
-        if (returnFocus.current?.isConnected) returnFocus.current.focus({ preventScroll: true });
+        // Only when focus was lost with the panel: if the user has moved on meanwhile (opened the account menu
+        // during the flight home), leave their focus where it is.
+        const lost = !document.activeElement || document.activeElement === document.body;
+        if (lost && returnFocus.current?.isConnected) returnFocus.current.focus({ preventScroll: true });
         returnFocus.current = null;
       })();
     }
