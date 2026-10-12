@@ -201,7 +201,7 @@ function SubtaskRow({ title, done, onToggle, onRemove }: { title: string; done: 
             void onToggle(e.target.checked).finally(() => setPending(null));
           }}
         />
-        <span>{title}</span>
+        <span className="sqt">{title}</span>
       </label>
       <button type="button" className="tv-x" aria-label={`Remove ${title}`} onClick={onRemove}>
         <svg viewBox="0 0 24 24" aria-hidden="true">

@@ -171,12 +171,12 @@ function TaskRow({ task, level, levels, categories, onOpen, onToggle, onDelete }
       )}
       {onOpen ? (
         <button type="button" className="wb-text wb-open" onClick={() => onOpen(task.id)}>
-          <span className="wb-title">{task.title}</span>
+          <span className="wb-title"><span className="sqt">{task.title}</span></span>
           {meta && <span className="wb-meta">{meta}</span>}
         </button>
       ) : (
         <span className="wb-text">
-          <span className="wb-title">{task.title}</span>
+          <span className="wb-title"><span className="sqt">{task.title}</span></span>
           {meta && <span className="wb-meta">{meta}</span>}
         </span>
       )}

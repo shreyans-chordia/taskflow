@@ -18,7 +18,7 @@ export function PaperNote({ title, line, level, levels, overdue, done, subtasks 
     <div className={`pn${done ? ' done' : ''}`} style={{ '--pc': level?.color ?? '#F0A81C' } as CSSProperties} aria-hidden="true">
       <span className="pn-tape" />
       <div className="pn-body">
-        <div className="pn-title">{title}</div>
+        <div className="pn-title"><span className="sqt">{title}</span></div>
         <div className="pn-line">{line}</div>
         {overdue ? <span className="stamp">Overdue</span> : done ? <span className="stamp">Done</span> : null}
         <div className="pn-meta">
