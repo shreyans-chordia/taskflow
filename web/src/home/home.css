@@ -3,10 +3,6 @@
 .home-loading { position: fixed; inset: 0; display: grid; place-items: center; background: var(--bg); color: #E9E2D6; font: 500 15px var(--f-ui) }
 .home-bar { position: absolute; z-index: 7; left: 16px; right: 16px; top: 14px; display: flex; justify-content: space-between; align-items: center; gap: 10px; pointer-events: none }
 .home-bar > * { pointer-events: auto }
-.home-badge { display: flex; align-items: center; gap: 10px; padding: 8px 16px 8px 10px; border-radius: 12px }
-.home-badge b { font: 700 22px/1 var(--f-label); letter-spacing: .06em; text-transform: uppercase }
-.home-account { display: flex; align-items: center; gap: 10px; padding: 6px 6px 6px 16px; border-radius: 12px; font-size: 14px }
-.home-account .btn { min-height: 38px }
 
 .panel { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: 16px; overflow-y: auto; background: rgba(0, 0, 0, .12); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); animation: panel-veil 520ms var(--ease-out) both }
 .panel-card { position: relative; width: min(940px, 100%); max-height: calc(100dvh - 32px); overflow-y: auto; overscroll-behavior: contain; padding: 28px 32px; border-radius: 18px; display: flex; flex-direction: column; gap: 16px; animation: panel-in 620ms var(--ease-out) both }
@@ -27,7 +23,6 @@
 @keyframes panel-out { to { opacity: 0; transform: scale(.92) } }
 
 @media (max-width: 600px) {
-  .home-account span { display: none }
   .panel { place-items: end center; padding: 10px }
   .panel-card { padding: 22px 18px }
 }

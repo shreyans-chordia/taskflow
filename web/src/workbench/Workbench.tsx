@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { useAuth } from '../auth/AuthProvider';
-import { Logo } from '../components/Ring';
+import { AccountMenu } from '../components/AccountMenu';
 import { TaskViews, type TaskSection } from '../tasks/TaskViews';
 import './workbench.css';
 
@@ -15,28 +14,18 @@ const SECTIONS: Array<[TaskSection, string]> = [
 ];
 
 export function Workbench({ onToggleTheme }: { onToggleTheme: () => void }) {
-  const { user, logout } = useAuth();
   const [section, setSection] = useState<{ name: TaskSection; n: number }>({ name: 'list', n: 0 });
   // A tab always starts its section afresh, even the current one (from a task deep inside it).
   const go = (name: TaskSection) => setSection((s) => ({ name, n: s.n + 1 }));
   return (
     <div className="wb">
       <header className="wb-bar">
-        <div className="wb-badge glass">
-          <Logo size={32} />
-          <b>TaskFlow</b>
-        </div>
-        <div className="wb-account glass">
-          <span>
-            Signed in as <strong>{user?.name}</strong>
-          </span>
+        {/* No desk lamp to click here, so the light / dark switch lives in the account menu. */}
+        <AccountMenu>
           <button type="button" className="btn btn-ghost" onClick={onToggleTheme}>
-            Lamp
+            Lamp: light / dark
           </button>
-          <button type="button" className="btn" onClick={() => void logout()}>
-            Sign out
-          </button>
-        </div>
+        </AccountMenu>
       </header>
       <nav className="wb-tabs glass" aria-label="Sections">
         {SECTIONS.map(([name, label]) => (

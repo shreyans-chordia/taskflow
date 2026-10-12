@@ -1,0 +1,17 @@
+/* The TaskFlow badge doubles as the account menu (desk and 2D page). */
+.acct { position: relative; z-index: 40 }
+.acct-badge { display: flex; align-items: center; gap: 10px; padding: 8px 12px 8px 10px; border: 0; border-radius: 12px; color: var(--g-ink); cursor: pointer; font: inherit }
+.acct-badge b { font: 700 22px/1 var(--f-label); letter-spacing: .06em; text-transform: uppercase }
+.acct-chev { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; opacity: .7; transition: transform 200ms var(--ease-out) }
+.acct-badge[aria-expanded="true"] .acct-chev { transform: rotate(180deg) }
+.acct-badge:hover .acct-chev { opacity: 1 }
+.acct-pop { position: absolute; z-index: 30; top: calc(100% + 8px); left: 0; width: max(100%, 240px); display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: 14px; animation: acct-in 220ms var(--ease-out) both }
+.acct-who { display: flex; flex-direction: column; gap: 4px; min-width: 0 }
+.acct-who strong { font: 600 16px/1.25 var(--f-ui); color: var(--g-ink); overflow-wrap: anywhere }
+.acct-mail { font-size: 13px; color: var(--g-sub); overflow-wrap: anywhere }
+.acct-pop .btn { min-height: 40px }
+.acct-pop .btn { width: 100% }
+/* a menu must read clearly over whatever is behind it: mostly solid paper, still a hint of glass */
+.acct-pop.glass { background: color-mix(in srgb, var(--g-solid) 88%, transparent) }
+@keyframes acct-in { from { opacity: 0; transform: translateY(-6px) } }
+@media (prefers-reduced-motion: reduce) { .acct-pop { animation: none } .acct-chev { transition: none } }

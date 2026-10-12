@@ -66,6 +66,7 @@ async function signIn(page: Page, email: string, password = PASSWORD) {
 
 async function signOut(page: Page) {
   if (await page.getByRole('dialog').isVisible()) await closePanel(page);
+  await page.getByRole('button', { name: /^TaskFlow account menu/ }).click(); // Sign out lives in the logo's menu
   await page.getByRole('button', { name: 'Sign out' }).click();
 }
 
@@ -79,7 +80,7 @@ test('a new user signs up, pins a task, and finds it again after signing back in
   test.slow(); // sign-up, two reloads and a sign-in each rebuild the room on CI's CPU-only renderer
   const email = unique('flow');
   await signUp(page, 'Shreyans', email);
-  await expect(page.getByText('Signed in as')).toContainText('Shreyans');
+  await expect(page.getByRole('button', { name: 'TaskFlow account menu, signed in as Shreyans' })).toBeVisible();
 
   // Add a task with an explicit priority level.
   await page.getByLabel('New task').fill('Submit Lab 7 record');

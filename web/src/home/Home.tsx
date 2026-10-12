@@ -1,8 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Component, lazy, Suspense, useCallback, useEffect, useId, useMemo, useState, type ReactNode } from 'react';
 import { categoriesApi, prioritiesApi, tasksApi } from '../api/endpoints';
-import { useAuth } from '../auth/AuthProvider';
-import { Logo } from '../components/Ring';
+import { AccountMenu } from '../components/AccountMenu';
 import type { Target } from '../desk/interaction';
 import { toDeskData } from '../desk/model';
 import { TaskViews, type TaskView } from '../tasks/TaskViews';
@@ -37,7 +36,6 @@ export function Home({ night, onToggleTheme }: { night: boolean; onToggleTheme: 
 }
 
 function DeskHome({ night, onToggleTheme }: { night: boolean; onToggleTheme: () => void }) {
-  const { user, logout } = useAuth();
   const tasks = useQuery({ queryKey: ['tasks'], queryFn: () => tasksApi.list() });
   const priorities = useQuery({ queryKey: ['priorities'], queryFn: prioritiesApi.list });
   const categories = useQuery({ queryKey: ['categories'], queryFn: categoriesApi.list });
@@ -54,18 +52,7 @@ function DeskHome({ night, onToggleTheme }: { night: boolean; onToggleTheme: () 
           <Desk data={data} night={night} onToggleLamp={onToggleTheme} onOpen={onOpen} panelOpen={!!open} />
         </Suspense>
         <header className="home-bar">
-          <div className="home-badge glass">
-            <Logo size={32} />
-            <b>TaskFlow</b>
-          </div>
-          <div className="home-account glass">
-            <span>
-              Signed in as <strong>{user?.name}</strong>
-            </span>
-            <button type="button" className="btn" onClick={() => void logout()}>
-              Sign out
-            </button>
-          </div>
+          <AccountMenu />
         </header>
       </div>
       {open && <Panel target={open} onClose={() => setOpen(null)} />}

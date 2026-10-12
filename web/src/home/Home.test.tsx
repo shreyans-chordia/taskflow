@@ -72,7 +72,7 @@ describe('<Home> on a browser that can draw 3D', () => {
     renderHome();
     expect(await screen.findByTestId('desk')).toBeInTheDocument();
     await waitFor(() => expect(deskProps.current?.data.tasks.map((t) => t.title)).toEqual(['Gym session', 'Lab record']));
-    expect(screen.getByText('Signed in as')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'TaskFlow account menu, signed in as Shreyans' })).toBeInTheDocument();
   });
 
   it('opens the task list when the corkboard is clicked, and Escape closes it (TASK-2)', async () => {
