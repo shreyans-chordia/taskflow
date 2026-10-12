@@ -194,7 +194,7 @@ test('the wall calendar shows a deadline and the search key finds the task (CAL-
   await panel.getByRole('searchbox', { name: 'Search' }).fill('deployment');
   await expect(panel.getByText('1 match', { exact: true })).toBeVisible();
   await expect(panel.getByRole('list', { name: 'Matching tasks' })).toContainText('Viva for Lab 9');
-  await panel.getByRole('group', { name: 'Status' }).getByRole('button', { name: 'Complete' }).click();
+  await panel.getByRole('group', { name: 'Status' }).getByRole('button', { name: 'Complete', exact: true }).click(); // exact: not "Incomplete"
   await expect(panel.getByText('No matching tasks. Try another keyword or loosen a filter.')).toBeVisible();
 });
 
