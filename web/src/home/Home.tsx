@@ -65,10 +65,10 @@ function viewFor(target: Target): TaskView {
   const [kind, id] = target.key.split(':');
   if (kind === 'calendar') return { type: 'calendar' };
   if (kind === 'search') return { type: 'search' };
-  if (kind === 'categories') return { type: 'organize' };
+  if (kind === 'categories') return { type: 'categories' };
   if (kind === 'note' && id) return { type: 'detail', id };
   if (kind === 'add') return { type: 'form' };
-  if (kind === 'tray' && id) return { type: 'list', eyebrow: 'Category', heading: target.label, categoryId: id };
+  if (kind === 'tray' && id) return { type: 'categories', categoryId: id };
   if (kind === 'manage') return { type: 'list', eyebrow: 'Edit or delete', heading: 'Your tasks' };
   return { type: 'list', eyebrow: target.label, heading: 'Your tasks' };
 }

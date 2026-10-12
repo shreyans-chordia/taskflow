@@ -205,6 +205,8 @@ test('the organizer renames, adds, reorders and deletes categories and sets the 
   await closePanel(page);
   const panel = page.getByRole('dialog');
   await page.getByRole('navigation', { name: 'Desk shortcuts' }).getByRole('button', { name: 'Categories' }).click();
+  await expect(panel.getByRole('heading', { name: 'All tasks' })).toBeVisible(); // the category board
+  await panel.getByRole('button', { name: 'Manage categories & priorities' }).click();
   await expect(panel.getByRole('heading', { name: 'Categories & priorities' })).toBeVisible();
   const cats = panel.getByRole('list', { name: 'Categories' });
 
@@ -244,17 +246,23 @@ test('the organizer renames, adds, reorders and deletes categories and sets the 
   await expect(page.getByRole('listitem').filter({ hasText: 'Book train tickets' })).toContainText('Low');
 });
 
-test('the desk opens a tray as that category and closes back to the room (CAT-2)', async ({ page }) => {
+test('the category board shows tasks by category and closes back to the room (CAT-2)', async ({ page }) => {
   await signUp(page, 'Trays', unique('tray'));
   await page.getByLabel('New task').fill('Revise normal forms');
   await page.getByRole('button', { name: 'Pin it' }).click();
   await expect(page.getByRole('listitem').filter({ hasText: 'Revise normal forms' })).toBeVisible();
   await closePanel(page);
 
-  // "Categories" on the rail flies to the organizer; Escape brings the camera home and the rail back.
+  // "Categories" on the rail flies to the organizer and opens the category board; a chip switches category.
   const rail = page.getByRole('navigation', { name: 'Desk shortcuts' });
   await rail.getByRole('button', { name: 'Categories' }).click();
-  await expect(page.getByRole('dialog')).toBeVisible();
+  const board = page.getByRole('dialog');
+  await expect(board.getByRole('heading', { name: 'All tasks' })).toBeVisible();
+  await expect(board.getByRole('button', { name: 'Revise normal forms' })).toBeVisible();
+  await board.getByRole('group', { name: 'Categories' }).getByRole('button', { name: /^Health/ }).click();
+  await expect(board.getByRole('heading', { name: 'Health tasks' })).toBeVisible();
+  await expect(board.getByText('No tasks in Health yet.')).toBeVisible();
+  // Escape brings the camera home and the rail back.
   await closePanel(page);
   await expect(rail.getByRole('button', { name: 'Tasks', exact: true })).toBeEnabled();
 });

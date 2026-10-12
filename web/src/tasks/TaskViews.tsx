@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { monthOf } from './calendar';
 import { CalendarView } from './CalendarView';
+import { CategoriesView } from './CategoriesView';
 import { today } from './format';
 import { OrganizeView } from './OrganizeView';
 import { DEFAULT_FILTERS, SearchView, type SearchFilters } from './SearchView';
@@ -17,10 +18,12 @@ export type TaskView =
   /** The month ("YYYY-MM") and the selected day; both default to today. */
   | { type: 'calendar'; month?: string; day?: string }
   | { type: 'search'; filters?: SearchFilters }
-  | { type: 'organize' };
+  | { type: 'organize' }
+  /** The category board; no categoryId is "All". */
+  | { type: 'categories'; categoryId?: string };
 
 /** The section a stack starts on, for the 2D page's tabs. */
-export type TaskSection = 'list' | 'calendar' | 'search' | 'organize';
+export type TaskSection = 'list' | 'calendar' | 'search' | 'categories';
 
 /**
  * The task screens and the way between them: list, calendar or search → task → edit, with Back retracing the steps.
@@ -39,7 +42,7 @@ export function TaskViews({ titleId, initial, onExit }: { titleId: string; initi
    * calendar, search or the organizer), keeping the way back from there.
    */
   const toStart = (message?: string) => {
-    const at = stack.findLastIndex((v) => v.type === 'list' || v.type === 'calendar' || v.type === 'search' || v.type === 'organize');
+    const at = stack.findLastIndex((v) => v.type === 'list' || v.type === 'calendar' || v.type === 'search' || v.type === 'categories' || v.type === 'organize');
     if (at < 0) return setStack([{ type: 'list', message }]);
     const home = stack[at]!;
     setStack([...stack.slice(0, at), home.type === 'list' ? { ...home, message } : home]);
@@ -98,6 +101,15 @@ export function TaskViews({ titleId, initial, onExit }: { titleId: string; initi
           onChange={(filters) => replace({ type: 'search', filters })}
           onOpen={(id) => push({ type: 'detail', id })}
           autoFocus={stack.length === 1 && !!onExit}
+        />
+      )}
+      {view.type === 'categories' && (
+        <CategoriesView
+          titleId={titleId}
+          categoryId={view.categoryId}
+          onPick={(categoryId) => replace({ type: 'categories', categoryId })}
+          onOpen={(id) => push({ type: 'detail', id })}
+          onManage={() => push({ type: 'organize' })}
         />
       )}
       {view.type === 'organize' && (

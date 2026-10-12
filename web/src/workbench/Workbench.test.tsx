@@ -79,6 +79,8 @@ describe('<Workbench> sections (CAL-1, SF-1, CAT-1)', () => {
     await userEvent.click(within(tabs).getByRole('button', { name: 'Search' }));
     expect(await screen.findByRole('searchbox', { name: 'Search' })).toBeInTheDocument();
     await userEvent.click(within(tabs).getByRole('button', { name: 'Categories' }));
+    expect(await screen.findByRole('heading', { name: 'All tasks' })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Manage categories & priorities' }));
     expect(await screen.findByRole('heading', { name: 'Categories & priorities' })).toBeInTheDocument();
     await userEvent.click(within(tabs).getByRole('button', { name: 'Tasks' }));
     expect(await screen.findByRole('heading', { name: 'Your tasks' })).toBeInTheDocument();

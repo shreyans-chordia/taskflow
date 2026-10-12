@@ -11,10 +11,10 @@ const SECTIONS: Array<[TaskSection, string]> = [
   ['list', 'Tasks'],
   ['calendar', 'Calendar'],
   ['search', 'Search'],
-  ['organize', 'Categories'],
+  ['categories', 'Categories'],
 ];
 
-const INITIAL: Record<TaskSection, TaskView> = { list: { type: 'list' }, calendar: { type: 'calendar' }, search: { type: 'search' }, organize: { type: 'organize' } };
+const INITIAL: Record<TaskSection, TaskView> = { list: { type: 'list' }, calendar: { type: 'calendar' }, search: { type: 'search' }, categories: { type: 'categories' } };
 
 export function Workbench({ onToggleTheme }: { onToggleTheme: () => void }) {
   const [section, setSection] = useState<{ name: TaskSection; n: number }>({ name: 'list', n: 0 });
