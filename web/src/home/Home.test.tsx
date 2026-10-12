@@ -29,6 +29,7 @@ vi.mock('../desk/Desk', () => ({
         <button type="button" onClick={() => open('add', 'Add Task')}>green key</button>
         <button type="button" onClick={() => open('search', 'Search')}>blue key</button>
         <button type="button" onClick={() => open('calendar', 'Wall calendar')}>wall calendar</button>
+        <button type="button" onClick={() => open('categories', 'Categories')}>organizer</button>
         <button type="button" onClick={props.onToggleLamp}>lamp</button>
       </div>
     );
@@ -124,6 +125,12 @@ describe('<Home> on a browser that can draw 3D', () => {
     const month = new Date().toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
     expect(await screen.findByRole('dialog', { name: month })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: month })).toHaveFocus();
+  });
+
+  it('the organizer opens the categories & priorities manager (CAT-1, PR-1)', async () => {
+    renderHome();
+    await userEvent.click(await screen.findByRole('button', { name: 'organizer' }));
+    expect(await screen.findByRole('dialog', { name: 'Categories & priorities' })).toBeInTheDocument();
   });
 
   it('the lamp switches the theme', async () => {

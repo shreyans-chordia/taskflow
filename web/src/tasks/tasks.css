@@ -147,6 +147,43 @@ button.cal-num:hover { background: var(--g-field) }
 .sf-count .link { font-size: 13px }
 .sf-none { margin: 0; padding: 16px; border: 1.5px dashed var(--g-line); border-radius: 12px; color: var(--g-ink); font-weight: 500 }
 
+/* organizer: categories & priority levels (CAT-1, CAT-4, CAT-5, PR-1..PR-3) */
+.org { display: flex; flex-direction: column; gap: 18px }
+.org-sec { display: flex; flex-direction: column; gap: 10px }
+.org-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px }
+.org-h { margin: 0; color: var(--g-ink) }
+.org-h:focus { outline: none }
+.org-head .wb-note { margin: 0; font-size: 13px }
+.org-list { list-style: none; margin: 0; padding: 0; border-top: 1.5px solid var(--g-ink) }
+.org-row { display: flex; align-items: center; gap: 10px; min-height: 58px; padding: 6px 2px; border-bottom: 1px solid var(--g-line) }
+.org-swatch { width: 28px; height: 28px; flex: none; border: 0; border-radius: 50%; cursor: pointer; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .2) }
+.org-swatch[aria-expanded="true"] { box-shadow: 0 0 0 2px var(--g-solid), 0 0 0 4px var(--g-ink) }
+.org-name { flex: 1 1 140px; min-width: 0 }
+/* names read as plain text until you point at or into them (beats .field-input input from base.css) */
+.org-row .org-name input { min-height: 40px; font-weight: 600; background: transparent; border-bottom-color: transparent }
+.org-row .org-name input:hover:not([readonly]) { background: var(--g-field); border-bottom-color: var(--g-line) }
+.org-row .org-name input:focus { background: var(--g-field); border-bottom-color: var(--pen) }
+.org-name input[readonly] { cursor: default }
+.org-count { flex: none; min-width: 64px; font-size: 13px; color: var(--g-sub); text-align: right }
+button.org-count { color: var(--pen) }
+.org-tag { flex: none; width: 108px; box-sizing: border-box; padding: 5px 9px; border: 1px dashed var(--g-line); border-radius: 99px; background: transparent; color: var(--g-sub); font: 600 11px/1 var(--f-label); letter-spacing: .1em; text-transform: uppercase; text-align: center; white-space: nowrap }
+.org-tag.on { border: 0; background: var(--g-cell); box-shadow: inset 0 0 0 1px var(--g-line); color: var(--g-ink) }
+.org-make { cursor: pointer; border-color: var(--pen); color: var(--pen) }
+.org-make:hover { background: color-mix(in srgb, var(--pen) 10%, transparent) }
+.org-moves { display: flex; gap: 2px; flex: none }
+.org-mv { min-height: 38px; min-width: 38px; padding: 0; font-size: 16px }
+.org-del { min-height: 38px; padding: 0 10px; font-size: 13px; flex: none }
+.org-div { display: flex; align-items: center; gap: 10px; padding: 12px 4px 6px; font: 600 12px/1.3 var(--f-ui); color: var(--g-sub) }
+.org-div::before, .org-div::after { content: ""; flex: 1; border-top: 1.5px dashed var(--g-ink); opacity: .45 }
+.org-palette { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: 10px 6px 12px 40px; border-bottom: 1px solid var(--g-line); background: var(--g-cell) }
+.org-custom { display: inline-flex; align-items: center; gap: 8px; font: 600 13px/1 var(--f-ui); color: var(--g-ink); cursor: pointer }
+.org-custom input { width: 30px; height: 30px; padding: 0; border: 0; border-radius: 50%; background: none; cursor: pointer }
+.org-custom input::-webkit-color-swatch-wrapper { padding: 0 }
+.org-custom input::-webkit-color-swatch { border: 0; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .2) }
+.org-confirm { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin: 6px 0; padding: 12px 14px; border-radius: 12px; box-shadow: inset 0 0 0 1.5px var(--coral); background: color-mix(in srgb, var(--coral) 8%, transparent) }
+.org-err { padding: 6px 4px 8px 40px }
+.org-add { align-self: flex-start; min-height: 42px }
+
 @media (max-width: 760px) {
   .tv-split { grid-template-columns: minmax(0, 1fr); gap: 18px }
   .tv-note { position: static; padding-top: 0; justify-items: center }
@@ -173,4 +210,16 @@ button.cal-num:hover { background: var(--g-field) }
   .cal-dn { flex-direction: column; align-items: flex-start; gap: 2px }
   /* too narrow for titles: the Ring says how many, the selected day lists them */
   .cal-task, .cal-more { display: none }
+}
+
+@media (max-width: 640px) {
+  /* two lines per row: colour, name and Delete; then the count, the tag and the arrows */
+  .org-row { flex-wrap: wrap; row-gap: 2px; column-gap: 8px }
+  .org-name { flex: 1 1 calc(100% - 140px) }
+  .org-list[aria-label="Priority levels"] .org-name { flex-basis: calc(100% - 172px) }
+  .org-del { order: 1 }
+  .org-count, .org-tag, .org-moves { order: 2 }
+  .org-count { min-width: 0; text-align: left; margin-left: 36px }
+  .org-moves { margin-left: auto }
+  .org-palette, .org-err { padding-left: 6px }
 }

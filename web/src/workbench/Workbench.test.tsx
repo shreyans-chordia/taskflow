@@ -62,7 +62,7 @@ describe('<Workbench> ticking a task (TASK-4)', () => {
   });
 });
 
-describe('<Workbench> sections (CAL-1, SF-1)', () => {
+describe('<Workbench> sections (CAL-1, SF-1, CAT-1)', () => {
   beforeEach(() => {
     vi.mocked(authApi.me).mockResolvedValue({ user: { id: 'u', name: 'S', email: 's@example.com', createdAt: '' }, csrfToken: 't' });
     vi.mocked(tasksApi.list).mockResolvedValue([task]);
@@ -70,7 +70,7 @@ describe('<Workbench> sections (CAL-1, SF-1)', () => {
     vi.mocked(prioritiesApi.list).mockResolvedValue([{ id: 'p1', name: 'Medium', color: '#F0A81C', order: 1, isDefault: true }]);
   });
 
-  it('reaches the calendar and search through tabs, and Tasks brings the list back', async () => {
+  it('reaches the calendar, search and the organizer through tabs, and Tasks brings the list back', async () => {
     renderBench();
     const tabs = await screen.findByRole('navigation', { name: 'Sections' });
     expect(screen.getByRole('button', { name: 'Tasks' })).toHaveAttribute('aria-current', 'page');
@@ -78,6 +78,8 @@ describe('<Workbench> sections (CAL-1, SF-1)', () => {
     expect(await screen.findByRole('heading', { name: new Date().toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }) })).toBeInTheDocument();
     await userEvent.click(within(tabs).getByRole('button', { name: 'Search' }));
     expect(await screen.findByRole('searchbox', { name: 'Search' })).toBeInTheDocument();
+    await userEvent.click(within(tabs).getByRole('button', { name: 'Categories' }));
+    expect(await screen.findByRole('heading', { name: 'Categories & priorities' })).toBeInTheDocument();
     await userEvent.click(within(tabs).getByRole('button', { name: 'Tasks' }));
     expect(await screen.findByRole('heading', { name: 'Your tasks' })).toBeInTheDocument();
   });

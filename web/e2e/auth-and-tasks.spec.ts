@@ -199,6 +199,51 @@ test('the wall calendar shows a deadline and the search key finds the task (CAL-
   await expect(panel.getByText('No matching tasks. Try another keyword or loosen a filter.')).toBeVisible();
 });
 
+test('the organizer renames, adds, reorders and deletes categories and sets the default level (CAT-1, CAT-4, CAT-5, PR-2)', async ({ page }) => {
+  test.slow();
+  await signUp(page, 'Organizer', unique('org'));
+  await closePanel(page);
+  const panel = page.getByRole('dialog');
+  await page.getByRole('navigation', { name: 'Desk shortcuts' }).getByRole('button', { name: 'Categories' }).click();
+  await expect(panel.getByRole('heading', { name: 'Categories & priorities' })).toBeVisible();
+  const cats = panel.getByRole('list', { name: 'Categories' });
+
+  // Rename in place; a name that is taken is refused (CAT-5).
+  await cats.getByRole('textbox', { name: 'Name of the category Personal' }).fill('Hobbies');
+  await cats.getByRole('textbox', { name: 'Name of the category Personal' }).press('Enter');
+  await expect(cats.getByRole('textbox', { name: 'Name of the category Hobbies' })).toBeVisible();
+  await cats.getByRole('textbox', { name: 'Name of the category Career' }).fill('hobbies');
+  await cats.getByRole('textbox', { name: 'Name of the category Career' }).press('Enter');
+  await expect(panel.getByRole('alert')).toContainText('already exists');
+  await expect(cats.getByRole('textbox', { name: 'Name of the category Career' })).toHaveValue('Career');
+
+  // A new category goes to the end, off the shelf; one step up puts it on (the sixth tray).
+  await panel.getByRole('button', { name: '+ Add category' }).click();
+  await panel.getByRole('textbox', { name: 'Category name' }).fill('Travel');
+  await panel.getByRole('textbox', { name: 'Category name' }).press('Enter');
+  await expect(cats.getByRole('textbox')).toHaveCount(7);
+  await expect(cats.getByRole('textbox').nth(6)).toHaveValue('Travel');
+  await cats.getByRole('button', { name: 'Move Travel up' }).click();
+  await expect(cats.getByRole('textbox').nth(5)).toHaveValue('Travel');
+
+  // Delete asks first and keeps the tasks (CAT-4).
+  await cats.getByRole('button', { name: 'Delete Health' }).click();
+  await panel.getByRole('alert').getByRole('button', { name: 'Delete', exact: true }).click();
+  await expect(panel.getByRole('status')).toContainText('Deleted “Health”');
+  await expect(cats.getByRole('textbox', { name: 'Name of the category Health' })).toHaveCount(0);
+
+  // New tasks start at the default level (PR-2).
+  await panel.getByRole('button', { name: 'Make Low the default' }).click();
+  await expect(panel.getByRole('status')).toContainText('New tasks now start as Low.');
+
+  // It all holds after a reload, and a quick-added task comes out Low.
+  await page.reload();
+  await openTasks(page);
+  await page.getByLabel('New task').fill('Book train tickets');
+  await page.getByRole('button', { name: 'Pin it' }).click();
+  await expect(page.getByRole('listitem').filter({ hasText: 'Book train tickets' })).toContainText('Low');
+});
+
 test('the desk opens a tray as that category and closes back to the room (CAT-2)', async ({ page }) => {
   await signUp(page, 'Trays', unique('tray'));
   await page.getByLabel('New task').fill('Revise normal forms');

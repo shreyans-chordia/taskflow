@@ -65,6 +65,7 @@ function viewFor(target: Target): TaskView {
   const [kind, id] = target.key.split(':');
   if (kind === 'calendar') return { type: 'calendar' };
   if (kind === 'search') return { type: 'search' };
+  if (kind === 'categories') return { type: 'organize' };
   if (kind === 'note' && id) return { type: 'detail', id };
   if (kind === 'add') return { type: 'form' };
   if (kind === 'tray' && id) return { type: 'list', eyebrow: 'Category', heading: target.label, categoryId: id };

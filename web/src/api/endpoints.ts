@@ -39,10 +39,19 @@ export const tasksApi = {
 export const categoriesApi = {
   list: () => api<{ categories: Category[] }>('GET', '/categories').then((r) => r.categories),
   create: (b: { name: string; color: string }) => api<{ category: Category }>('POST', '/categories', b).then((r) => r.category),
+  update: (id: string, b: { name?: string; color?: string }) => api<{ category: Category }>('PATCH', `/categories/${id}`, b).then((r) => r.category),
+  /** Removes it from every task (the tasks stay); the locked fallback category cannot be deleted. */
+  remove: (id: string) => api<{ removedFromTasks: number }>('DELETE', `/categories/${id}`),
+  /** Every id exactly once, in the new order; the first six are the desk's trays. */
+  reorder: (ids: string[]) => api<{ categories: Category[] }>('PUT', '/categories/order', { ids }).then((r) => r.categories),
 };
 
 export const prioritiesApi = {
   list: () => api<{ priorities: Priority[] }>('GET', '/priorities').then((r) => r.priorities),
   /** `position` 0 is the most important; the levels below it move down one. */
   create: (b: { name: string; color: string; position?: number }) => api<{ priority: Priority }>('POST', '/priorities', b).then((r) => r.priority),
+  update: (id: string, b: { name?: string; color?: string; isDefault?: true }) => api<{ priority: Priority }>('PATCH', `/priorities/${id}`, b).then((r) => r.priority),
+  /** Its tasks move to the next level down (or up, for the last one); the last remaining level cannot be deleted. */
+  remove: (id: string) => api<{ movedTasks: number; movedTo: Priority }>('DELETE', `/priorities/${id}`),
+  reorder: (ids: string[]) => api<{ priorities: Priority[] }>('PUT', '/priorities/order', { ids }).then((r) => r.priorities),
 };
