@@ -137,13 +137,15 @@ describe('categories', () => {
     expect(screen.getByRole('heading', { name: 'Categories' })).toHaveFocus();
   });
 
-  it('recolours from the palette', async () => {
+  it('recolours from the colour picker', async () => {
     api.cats.update.mockImplementation(async (id, b) => ({ ...cats.find((c) => c.id === id)!, ...b }));
     await renderOrganizer();
-    await userEvent.click(await catRows().findByRole('button', { name: 'Colour of Study' }));
-    await userEvent.click(within(screen.getByRole('radiogroup', { name: 'Colour of Study' })).getByRole('radio', { name: '#6DB352' }));
+    await userEvent.click(await catRows().findByRole('button', { name: 'Colour of Study: #4F86D9' }));
+    const picker = screen.getByRole('dialog', { name: 'Choose a colour' });
+    expect(within(picker).getByRole('button', { name: '#4F86D9' })).toHaveAttribute('aria-pressed', 'true');
+    await userEvent.click(within(picker).getByRole('button', { name: '#6DB352' }));
     expect(api.cats.update).toHaveBeenCalledWith('c0', { color: '#6DB352' });
-    expect(screen.queryByRole('radiogroup', { name: 'Colour of Study' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('dialog', { name: 'Choose a colour' })).not.toBeInTheDocument();
   });
 
   it('adds a category at the end (CAT-1)', async () => {

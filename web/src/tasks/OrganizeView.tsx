@@ -1,8 +1,9 @@
 import { useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
 import { ApiError } from '../api/client';
 import type { Category, Priority } from '../api/types';
+import { ColorButton } from '../components/ColorPicker';
 import { Ring } from '../components/Ring';
-import { PRIORITY_SWATCHES, rankLevels, SWATCHES } from './format';
+import { rankLevels } from './format';
 import { QuickAdd } from './QuickAdd';
 import { moved, useOrganizeActions } from './useOrganizeActions';
 import { useTaskActions, useTaskData } from './useTaskActions';
@@ -30,7 +31,6 @@ export function OrganizeView({ titleId, onOpenCategory }: { titleId: string; onO
   const [message, setMessage] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [confirm, setConfirm] = useState<Confirm>(null);
-  const [palette, setPalette] = useState<string | null>(null);
   const [adding, setAdding] = useState<Kind | null>(null);
   const focusAfter = useRef<{ id: string; dir: 'up' | 'down' } | { heading: Kind } | null>(null);
   const root = useRef<HTMLDivElement>(null);
@@ -170,9 +170,6 @@ export function OrganizeView({ titleId, onOpenCategory }: { titleId: string; onO
                 item={c}
                 first={i === 0}
                 last={i === cats.length - 1}
-                swatches={SWATCHES}
-                paletteOpen={palette === c.id}
-                onPalette={() => setPalette((p) => (p === c.id ? null : c.id))}
                 locked={c.locked}
                 lockedNote="Others is the catch-all category, so it keeps its name and can’t be deleted."
                 count={
@@ -230,9 +227,6 @@ export function OrganizeView({ titleId, onOpenCategory }: { titleId: string; onO
                 ring={<Ring filled={l.filled} segments={levels.length} color={l.color} size={22} />}
                 first={i === 0}
                 last={i === levels.length - 1}
-                swatches={PRIORITY_SWATCHES_WITH_BRAND}
-                paletteOpen={palette === l.id}
-                onPalette={() => setPalette((p) => (p === l.id ? null : l.id))}
                 undeletable={levels.length < 2 ? 'Keep at least one priority level.' : undefined}
                 count={<span className="org-count">{tasksText(n)}</span>}
                 tag={
@@ -286,20 +280,14 @@ export function OrganizeView({ titleId, onOpenCategory }: { titleId: string; onO
   );
 }
 
-/** The brand's three priority colours first, then the extra swatches. */
-const PRIORITY_SWATCHES_WITH_BRAND = ['#E04A2F', '#F0A81C', '#4E9E78', ...PRIORITY_SWATCHES];
-
 const ConfirmSlot = ({ children }: { children: ReactNode }) => <>{children}</>;
 
-function Row({ kind, item, ring, first, last, swatches, paletteOpen, onPalette, locked, lockedNote, undeletable, count, tag, error, onRename, onColour, onMove, onDelete }: {
+function Row({ kind, item, ring, first, last, locked, lockedNote, undeletable, count, tag, error, onRename, onColour, onMove, onDelete }: {
   kind: Kind;
   item: Category | Priority;
   ring?: ReactNode;
   first: boolean;
   last: boolean;
-  swatches: string[];
-  paletteOpen: boolean;
-  onPalette: () => void;
   /** The fallback category: no renaming, no deleting. */
   locked?: boolean;
   lockedNote?: string;
@@ -321,7 +309,6 @@ function Row({ kind, item, ring, first, last, swatches, paletteOpen, onPalette, 
     setSaved(item.name);
     setDraft(item.name);
   }
-  const custom = useRef(0);
   const noun = kind === 'category' ? 'category' : 'priority level';
 
   async function commit() {
@@ -353,7 +340,7 @@ function Row({ kind, item, ring, first, last, swatches, paletteOpen, onPalette, 
     <>
       <li className="org-row" style={{ '--pc': item.color } as CSSProperties}>
         {ring}
-        <button type="button" className="org-swatch" style={{ background: item.color }} aria-label={`Colour of ${item.name}`} aria-expanded={paletteOpen} onClick={onPalette} />
+        <ColorButton value={item.color} label={`Colour of ${item.name}`} onChange={onColour} />
         <div className="field-input org-name">
           <input
             value={draft}
@@ -381,40 +368,6 @@ function Row({ kind, item, ring, first, last, swatches, paletteOpen, onPalette, 
           Delete
         </button>
       </li>
-      {paletteOpen && (
-        <li className="org-palette">
-          <span className="tv-swatches" role="radiogroup" aria-label={`Colour of ${item.name}`}>
-            {swatches.map((c) => (
-              <button
-                key={c}
-                type="button"
-                role="radio"
-                aria-checked={item.color.toLowerCase() === c.toLowerCase()}
-                aria-label={c}
-                className="tv-swatch"
-                style={{ background: c }}
-                onClick={() => {
-                  onColour(c);
-                  onPalette();
-                }}
-              />
-            ))}
-          </span>
-          <label className="org-custom">
-            Any colour
-            <input
-              type="color"
-              defaultValue={item.color}
-              onChange={(e) => {
-                // The picker reports every step of a drag; save once it rests.
-                const v = e.target.value;
-                window.clearTimeout(custom.current);
-                custom.current = window.setTimeout(() => onColour(v), 350);
-              }}
-            />
-          </label>
-        </li>
-      )}
       {shown && (
         <li className="org-err field-error" role="alert">
           {shown}
