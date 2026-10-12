@@ -9,7 +9,11 @@
 .home-account .btn { min-height: 38px }
 
 .panel { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: 16px; overflow-y: auto; background: rgba(0, 0, 0, .12); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); animation: panel-veil 520ms var(--ease-out) both }
-.panel-card { position: relative; width: min(940px, 100%); max-height: calc(100dvh - 32px); overflow-y: auto; padding: 28px 32px; border-radius: 18px; display: flex; flex-direction: column; gap: 16px; animation: panel-in 620ms var(--ease-out) both }
+.panel-card { position: relative; width: min(940px, 100%); max-height: calc(100dvh - 32px); overflow-y: auto; overscroll-behavior: contain; padding: 28px 32px; border-radius: 18px; display: flex; flex-direction: column; gap: 16px; animation: panel-in 620ms var(--ease-out) both }
+/* The card still scrolls (wheel, touchpad, keys, touch) but shows no scrollbar: on Windows the bar sits inside the
+   card and squares off its right edge, breaking the rounded glass shape. */
+.panel-card { scrollbar-width: none }
+.panel-card::-webkit-scrollbar { display: none }
 .panel.closing { animation: panel-veil-out 260ms var(--ease-in) forwards }
 .panel.closing .panel-card { animation: panel-out 260ms var(--ease-in) forwards }
 .panel-card:has(.tv[data-view="calendar"]) { width: min(1200px, 100%) }
