@@ -134,14 +134,15 @@ export function TaskList({ titleId, eyebrow = 'Corkboard', heading = 'Your tasks
   );
 }
 
-function TaskRow({ task, level, levels, categories, onOpen, onToggle, onDelete }: {
+/** One task as a row: tick, priority pill, title (opens the task), overdue stamp and, in the list, Delete. */
+export function TaskRow({ task, level, levels, categories, onOpen, onToggle, onDelete }: {
   task: Task;
   level?: { name: string; color: string; filled: number };
   levels: number;
   categories: string[];
   onOpen?: (id: string) => void;
   onToggle: (done: boolean) => Promise<unknown>;
-  onDelete: () => void;
+  onDelete?: () => void;
 }) {
   // While a save is in flight the box shows what was clicked, set in the same event as the click
   // (React Query's cache update lands a tick later, which made the box flicker back). When the save
@@ -181,9 +182,11 @@ function TaskRow({ task, level, levels, categories, onOpen, onToggle, onDelete }
         </span>
       )}
       {late && <span className="stamp sm">Overdue</span>}
-      <button type="button" className="btn btn-ghost wb-del" onClick={onDelete} aria-label={`Delete ${task.title}`}>
-        Delete
-      </button>
+      {onDelete && (
+        <button type="button" className="btn btn-ghost wb-del" onClick={onDelete} aria-label={`Delete ${task.title}`}>
+          Delete
+        </button>
+      )}
     </li>
   );
 }

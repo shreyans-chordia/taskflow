@@ -105,6 +105,48 @@
 .tv-swatch[aria-checked="true"] { box-shadow: 0 0 0 2px var(--g-solid), 0 0 0 4px var(--g-ink) }
 .tv-quick-err { flex-basis: 100% }
 
+/* calendar: a month of deadlines and the selected day beside it (CAL-1..CAL-4) */
+.cal { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 20px; align-items: start }
+.cal-main { min-width: 0 }
+.cal-nav .btn { min-height: 42px }
+.cal-step { padding: 0 12px }
+.cal-grid { width: calc(100% + 12px); margin: -6px; table-layout: fixed; border-collapse: separate; border-spacing: 6px }
+.cal-grid th { padding: 0 6px 2px; text-align: left; font: 600 13px/1 var(--f-label); letter-spacing: .14em; text-transform: uppercase; color: var(--g-sub) }
+.cal-cell { height: 104px; padding: 5px; vertical-align: top; border-radius: 10px; background: var(--g-cell); box-shadow: inset 0 0 0 1px var(--g-line); cursor: pointer; overflow: hidden }
+.cal-cell.out { background: transparent; box-shadow: inset 0 0 0 1px var(--g-line); opacity: .5; cursor: default }
+.cal-cell.out .cal-num { display: inline-flex; color: var(--g-sub); opacity: .6; cursor: default }
+.cal-cell.sel { background: var(--g-field); box-shadow: inset 0 0 0 2px var(--pen), 0 8px 20px var(--pen-glow) }
+.cal-dn { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px }
+.cal-num { width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--g-ink); font: 500 13px/1 var(--f-mono); cursor: pointer }
+button.cal-num:hover { background: var(--g-field) }
+.cal-cell.today .cal-num { box-shadow: inset 0 0 0 1.5px var(--g-ink) }
+.cal-cell.sel .cal-num { background: var(--pen); color: var(--on-pen); box-shadow: none }
+.cal-task { display: block; width: 100%; height: 22px; margin-top: 3px; padding: 0 7px; border: 0; border-radius: 6px; background: color-mix(in srgb, var(--pc) 30%, var(--mixbase)); color: var(--g-ink); font: 600 12px/22px var(--f-ui); text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer }
+.cal-task:hover { box-shadow: inset 0 0 0 1.5px var(--pen) }
+.cal-task.od { box-shadow: inset 0 0 0 1.5px var(--danger-ink) }
+.cal-task.done { background: transparent; box-shadow: inset 0 0 0 1px var(--g-line); color: var(--g-sub) }
+.cal-task.done .sqt { background: var(--sq) repeat-x 0 56% / 48px 12px }
+.cal-more { display: block; height: 22px; padding: 0 6px; border: 0; background: transparent; color: var(--pen); font: 600 12px/1 var(--f-ui); cursor: pointer }
+.cal-more:hover { text-decoration: underline }
+.cal-legend { margin: 12px 0 0; font-size: 13px }
+.cal-side { position: sticky; top: 8px; min-width: 0; display: flex; flex-direction: column; gap: 12px; padding: 20px; border-radius: 14px; background: var(--g-field); box-shadow: inset 0 0 0 1px var(--g-line) }
+.cal-day { margin: 0; font: 700 32px/1.05 var(--f-script); color: var(--g-ink) }
+/* a narrow column: the priority shows as its Ring and colour only (the name stays for screen readers) */
+.cal-side .wb-pill { width: auto; padding: 4px; gap: 0; font-size: 0 }
+.cal-side .wb-row { gap: 10px; min-height: 50px }
+
+/* search key: keyword, filters, results (SF-1..SF-6) */
+.sf { display: flex; flex-direction: column; gap: 16px }
+.sf-group { display: flex; flex-direction: column; gap: 8px; min-width: 0 }
+.sf-pair { display: flex; flex-wrap: wrap; gap: 16px 32px }
+.sf .tv-chip { min-height: 38px; padding: 0 12px; font-size: 13px }
+.sf-results { display: flex; flex-direction: column; gap: 8px }
+.sf-results[aria-busy="true"] .wb-list { opacity: .6; transition: opacity 160ms ease-out 120ms }
+.sf-count { display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 24px }
+.sf-count .label { color: var(--g-ink) }
+.sf-count .link { font-size: 13px }
+.sf-none { margin: 0; padding: 16px; border: 1.5px dashed var(--g-line); border-radius: 12px; color: var(--g-ink); font-weight: 500 }
+
 @media (max-width: 760px) {
   .tv-split { grid-template-columns: minmax(0, 1fr); gap: 18px }
   .tv-note { position: static; padding-top: 0; justify-items: center }
@@ -117,4 +159,18 @@
 @media (max-width: 480px) {
   .tv-two { grid-template-columns: minmax(0, 1fr) }
   .tv-level { min-width: calc(50% - 5px) }
+}
+
+@media (max-width: 1000px) {
+  .cal { grid-template-columns: minmax(0, 1fr) }
+  .cal-side { position: static }
+  .cal-cell { height: 80px }
+}
+@media (max-width: 600px) {
+  .cal-grid { width: calc(100% + 6px); margin: -3px; border-spacing: 3px }
+  .cal-grid th { padding: 0 2px; font-size: 11px; letter-spacing: .04em }
+  .cal-cell { height: 58px; padding: 3px }
+  .cal-dn { flex-direction: column; align-items: flex-start; gap: 2px }
+  /* too narrow for titles: the Ring says how many, the selected day lists them */
+  .cal-task, .cal-more { display: none }
 }

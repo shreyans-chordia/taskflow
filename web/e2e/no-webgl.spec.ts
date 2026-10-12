@@ -2,7 +2,8 @@ import { expect, test } from '@playwright/test';
 
 /**
  * Runs in the "chromium-no-webgl" project, where the browser has 3D graphics switched off.
- * The app must still work: it shows the plain task list instead of the desk (TASK-1, TASK-2).
+ * The app must still work: it shows the plain task list instead of the desk, with calendar and search as tabs
+ * (TASK-1, TASK-2, CAL-1, SF-1).
  */
 
 const unique = () => `flat-${Date.now()}-${Math.random().toString(36).slice(2, 7)}@example.com`;
@@ -23,4 +24,12 @@ test('without WebGL the home screen is the 2D task list, fully usable', async ({
   await page.getByRole('button', { name: 'Pin it' }).click();
   await page.reload();
   await expect(page.getByText('Works in 2D too')).toBeVisible();
+
+  // The calendar and search are tabs here, in place of the desk's objects (CAL-1, SF-1).
+  const tabs = page.getByRole('navigation', { name: 'Sections' });
+  await tabs.getByRole('button', { name: 'Calendar' }).click();
+  await expect(page.getByRole('heading', { name: new Date().toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }) })).toBeVisible();
+  await tabs.getByRole('button', { name: 'Search' }).click();
+  await page.getByRole('searchbox', { name: 'Search' }).fill('2D');
+  await expect(page.getByRole('list', { name: 'Matching tasks' })).toContainText('Works in 2D too');
 });
