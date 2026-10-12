@@ -1,5 +1,5 @@
 /* The room's colour swatch and colour picker (from the prototype). */
-.cswatch { width: 32px; height: 32px; flex: none; margin: 4px; padding: 0; border: 0; border-radius: 50%; background: var(--sw); cursor: pointer; box-shadow: 0 0 0 2.5px var(--g-field), 0 0 0 4px var(--g-ink), inset 0 2px 3px rgba(255, 255, 255, .35), inset 0 -2px 3px rgba(0, 0, 0, .14); transition: transform 120ms ease-out }
+.cswatch { width: 32px; height: 32px; flex: none; margin: 4px; padding: 0; border: 0; border-radius: 50%; background: var(--sw); cursor: pointer; box-shadow: 0 0 0 2.5px #FFFFFF, 0 0 0 4px var(--g-ink), inset 0 2px 3px rgba(255, 255, 255, .35), inset 0 -2px 3px rgba(0, 0, 0, .14); transition: transform 120ms ease-out }
 .cswatch:hover { transform: scale(1.07) }
 .cswatch:focus-visible { outline: 2px solid var(--pen); outline-offset: 5px }
 
