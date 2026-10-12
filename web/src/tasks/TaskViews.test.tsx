@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '../api/client';
@@ -85,6 +85,21 @@ describe('a task (TASK-4, TASK-5, SUB-1 to SUB-3)', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Remove ER diagram' }));
     expect(api.tasks.removeSubtask).toHaveBeenCalledWith('t1', 's1');
     await waitFor(() => expect(screen.queryByText('ER diagram')).not.toBeInTheDocument());
+  });
+
+  it('shows a checklist tick straight away, before the server answers', async () => {
+    let finish: (t: Task) => void = () => {};
+    api.tasks.updateSubtask.mockReturnValue(new Promise<Task>((r) => (finish = r)));
+    renderViews({ type: 'detail', id: 't1' });
+    const box = await screen.findByRole('checkbox', { name: 'Normalise tables' });
+    // A synchronous click, checked at once: what a person sees in the same frame (and what Playwright's check() asserts).
+    fireEvent.click(box);
+    expect(box).toBeChecked(); // no flicker back while the save is in flight
+    const saved = { ...base, subtasks: base.subtasks.map((s) => ({ ...s, done: true })) };
+    api.tasks.list.mockResolvedValue([saved]);
+    finish(saved);
+    await waitFor(() => expect(screen.getByText('Checklist · 2 of 2 done')).toBeInTheDocument());
+    expect(screen.getByRole('checkbox', { name: 'Normalise tables' })).toBeChecked();
   });
 
   it('asks before deleting, and goes back to the list afterwards', async () => {

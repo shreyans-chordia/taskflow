@@ -124,21 +124,13 @@ export function TaskDetail({ id, titleId, onEdit, onDeleted }: { id: string; tit
           {task.subtasks.length > 0 && (
             <ul className="tv-subs">
               {task.subtasks.map((s) => (
-                <li key={s.id} className={s.done ? 'done' : undefined}>
-                  <label>
-                    <input
-                      type="checkbox"
-                      checked={s.done}
-                      onChange={(e) => act.setSubtaskDone.mutateAsync({ id, sub: s.id, done: e.target.checked }).catch(fail('Could not update the item.'))}
-                    />
-                    <span>{s.title}</span>
-                  </label>
-                  <button type="button" className="tv-x" aria-label={`Remove ${s.title}`} onClick={() => act.removeSubtask.mutateAsync({ id, sub: s.id }).catch(fail('Could not remove the item.'))}>
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                      <path d="M6 6L18 18M18 6L6 18" />
-                    </svg>
-                  </button>
-                </li>
+                <SubtaskRow
+                  key={s.id}
+                  title={s.title}
+                  done={s.done}
+                  onToggle={(done) => act.setSubtaskDone.mutateAsync({ id, sub: s.id, done }).catch(fail('Could not update the item.'))}
+                  onRemove={() => act.removeSubtask.mutateAsync({ id, sub: s.id }).catch(fail('Could not remove the item.'))}
+                />
               ))}
             </ul>
           )}
@@ -188,5 +180,34 @@ export function TaskDetail({ id, titleId, onEdit, onDeleted }: { id: string; tit
         )}
       </div>
     </div>
+  );
+}
+
+/**
+ * One checklist item. Like the task tick, the box shows what was clicked until the save settles: the optimistic
+ * cache update lands a moment after the click, and without this the box would flick back and forth.
+ */
+function SubtaskRow({ title, done, onToggle, onRemove }: { title: string; done: boolean; onToggle: (done: boolean) => Promise<unknown>; onRemove: () => void }) {
+  const [pending, setPending] = useState<boolean | null>(null);
+  const shown = pending ?? done;
+  return (
+    <li className={shown ? 'done' : undefined}>
+      <label>
+        <input
+          type="checkbox"
+          checked={shown}
+          onChange={(e) => {
+            setPending(e.target.checked);
+            void onToggle(e.target.checked).finally(() => setPending(null));
+          }}
+        />
+        <span>{title}</span>
+      </label>
+      <button type="button" className="tv-x" aria-label={`Remove ${title}`} onClick={onRemove}>
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M6 6L18 18M18 6L6 18" />
+        </svg>
+      </button>
+    </li>
   );
 }
