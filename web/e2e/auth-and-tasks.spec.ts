@@ -215,6 +215,7 @@ test('the desk opens a tray as that category and closes back to the room (CAT-2)
 });
 
 test('a forgotten password is reset with an emailed code, and the old one stops working (AUTH-8, AUTH-9)', async ({ page }) => {
+  test.slow(); // builds the desk three times (sign-up, after the reset, after signing back in): ~57 s on CI's CPU renderer
   const email = unique('reset');
   await signUp(page, 'Forgetful', email);
   await signOut(page);
