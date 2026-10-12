@@ -66,6 +66,7 @@ async function signIn(page: Page, email: string, password = PASSWORD) {
 
 async function signOut(page: Page) {
   if (await page.getByRole('dialog').isVisible()) await closePanel(page);
+  await page.getByRole('button', { name: /^TaskFlow account menu/ }).click(); // Sign out lives in the logo's menu
   await page.getByRole('button', { name: 'Sign out' }).click();
 }
 
@@ -79,7 +80,7 @@ test('a new user signs up, pins a task, and finds it again after signing back in
   test.slow(); // sign-up, two reloads and a sign-in each rebuild the room on CI's CPU-only renderer
   const email = unique('flow');
   await signUp(page, 'Shreyans', email);
-  await expect(page.getByText('Signed in as')).toContainText('Shreyans');
+  await expect(page.getByRole('button', { name: 'TaskFlow account menu, signed in as Shreyans' })).toBeVisible();
 
   // Add a task with an explicit priority level.
   await page.getByLabel('New task').fill('Submit Lab 7 record');
@@ -159,6 +160,45 @@ test('a task gets every detail, a checklist and an edit, survives a reload, then
   await expect(panel.getByRole('button', { name: /^Write Lab 8 record/ })).toHaveCount(0);
 });
 
+test('the wall calendar shows a deadline and the search key finds the task (CAL-1, CAL-3, SF-1, SF-4, SF-5, SF-6)', async ({ page }) => {
+  test.slow();
+  await signUp(page, 'Planner', unique('plan'));
+  const panel = page.getByRole('dialog');
+  const rail = page.getByRole('navigation', { name: 'Desk shortcuts' });
+
+  // A task due on the 15th of this month, with a word only its description holds.
+  const now = new Date();
+  const month = now.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+  const due = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-15`;
+  await panel.getByRole('button', { name: '+ Add task' }).click();
+  await panel.getByLabel('Title').fill('Viva for Lab 9');
+  await panel.getByLabel('Description · optional').fill('Component and deployment diagrams.');
+  await panel.getByLabel('Deadline · optional').fill(due);
+  await panel.getByRole('button', { name: 'Pin to corkboard' }).click();
+  await expect(panel.getByRole('status')).toContainText('Pinned “Viva for Lab 9”');
+  await closePanel(page);
+
+  // The wall calendar: the task sits on the 15th and opens from there; Back returns to the month.
+  await rail.getByRole('button', { name: 'Calendar' }).click();
+  await expect(panel.getByRole('heading', { name: month })).toBeVisible();
+  const grid = panel.getByRole('table', { name: month });
+  await expect(grid.getByRole('button', { name: /: 1 task$/ })).toHaveAccessibleName(/ 15 /);
+  await grid.getByRole('button', { name: /^Viva for Lab 9/ }).click();
+  await expect(panel.getByRole('heading', { name: 'Viva for Lab 9', exact: true })).toBeVisible();
+  await panel.getByRole('button', { name: '← Back' }).click();
+  await expect(panel.getByRole('heading', { name: month })).toBeVisible();
+  await closePanel(page);
+
+  // The search key: a word from the description finds it on the server; asking for complete tasks finds nothing.
+  await rail.getByRole('button', { name: 'Search' }).click();
+  await expect(panel.getByRole('searchbox', { name: 'Search' })).toBeFocused();
+  await panel.getByRole('searchbox', { name: 'Search' }).fill('deployment');
+  await expect(panel.getByText('1 match', { exact: true })).toBeVisible();
+  await expect(panel.getByRole('list', { name: 'Matching tasks' })).toContainText('Viva for Lab 9');
+  await panel.getByRole('group', { name: 'Status' }).getByRole('button', { name: 'Complete', exact: true }).click(); // exact: not "Incomplete"
+  await expect(panel.getByText('No matching tasks. Try another keyword or loosen a filter.')).toBeVisible();
+});
+
 test('the desk opens a tray as that category and closes back to the room (CAT-2)', async ({ page }) => {
   await signUp(page, 'Trays', unique('tray'));
   await page.getByLabel('New task').fill('Revise normal forms');
@@ -175,6 +215,7 @@ test('the desk opens a tray as that category and closes back to the room (CAT-2)
 });
 
 test('a forgotten password is reset with an emailed code, and the old one stops working (AUTH-8, AUTH-9)', async ({ page }) => {
+  test.slow(); // builds the desk three times (sign-up, after the reset, after signing back in): ~57 s on CI's CPU renderer
   const email = unique('reset');
   await signUp(page, 'Forgetful', email);
   await signOut(page);

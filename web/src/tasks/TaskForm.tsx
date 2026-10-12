@@ -85,7 +85,7 @@ export function TaskForm({ id, titleId, categoryId, date, onSaved, onCancel }: {
       } else {
         const t = await act.create.mutateAsync(body);
         // Stay on a fresh form so the next task can go straight in, as on the prototype.
-        setDraft({ title: '', description: '', categoryIds: draft.categoryIds, priorityId: draft.priorityId, date: '', time: '' });
+        setDraft({ title: '', description: '', categoryIds: draft.categoryIds, priorityId: draft.priorityId, date: date ?? '', time: '' }); // from the calendar: stay on that day
         setSaved(`Pinned “${t.title}” to your corkboard. Add another, or go back to the desk.`);
         titleRef.current?.focus();
         onSaved(t.id, true, t.title);

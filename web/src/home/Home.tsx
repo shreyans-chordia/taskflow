@@ -1,8 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Component, lazy, Suspense, useCallback, useEffect, useId, useMemo, useState, type ReactNode } from 'react';
 import { categoriesApi, prioritiesApi, tasksApi } from '../api/endpoints';
-import { useAuth } from '../auth/AuthProvider';
-import { Logo } from '../components/Ring';
+import { AccountMenu } from '../components/AccountMenu';
 import type { Target } from '../desk/interaction';
 import { toDeskData } from '../desk/model';
 import { TaskViews, type TaskView } from '../tasks/TaskViews';
@@ -37,7 +36,6 @@ export function Home({ night, onToggleTheme }: { night: boolean; onToggleTheme: 
 }
 
 function DeskHome({ night, onToggleTheme }: { night: boolean; onToggleTheme: () => void }) {
-  const { user, logout } = useAuth();
   const tasks = useQuery({ queryKey: ['tasks'], queryFn: () => tasksApi.list() });
   const priorities = useQuery({ queryKey: ['priorities'], queryFn: prioritiesApi.list });
   const categories = useQuery({ queryKey: ['categories'], queryFn: categoriesApi.list });
@@ -54,18 +52,7 @@ function DeskHome({ night, onToggleTheme }: { night: boolean; onToggleTheme: () 
           <Desk data={data} night={night} onToggleLamp={onToggleTheme} onOpen={onOpen} panelOpen={!!open} />
         </Suspense>
         <header className="home-bar">
-          <div className="home-badge glass">
-            <Logo size={32} />
-            <b>TaskFlow</b>
-          </div>
-          <div className="home-account glass">
-            <span>
-              Signed in as <strong>{user?.name}</strong>
-            </span>
-            <button type="button" className="btn" onClick={() => void logout()}>
-              Sign out
-            </button>
-          </div>
+          <AccountMenu />
         </header>
       </div>
       {open && <Panel target={open} onClose={() => setOpen(null)} />}
@@ -73,9 +60,11 @@ function DeskHome({ night, onToggleTheme }: { night: boolean; onToggleTheme: () 
   );
 }
 
-/** What each desk object opens, until the calendar, search, review and Pomodoro panels have their own screens. */
+/** What each desk object opens. The weekly review and Pomodoro still open the list until they get their own screens. */
 function viewFor(target: Target): TaskView {
   const [kind, id] = target.key.split(':');
+  if (kind === 'calendar') return { type: 'calendar' };
+  if (kind === 'search') return { type: 'search' };
   if (kind === 'note' && id) return { type: 'detail', id };
   if (kind === 'add') return { type: 'form' };
   if (kind === 'tray' && id) return { type: 'list', eyebrow: 'Category', heading: target.label, categoryId: id };
@@ -102,9 +91,9 @@ function Panel({ target, onClose }: { target: Target; onClose: () => void }) {
     return () => document.removeEventListener('keydown', onKey);
   }, [close]);
 
-  // Focus moves into the panel: to the heading, or to the title field of a new task.
+  // Focus moves into the panel: to the heading, or to the field you came to type in (a new task's title, the search box).
   useEffect(() => {
-    if (initial.type !== 'form') document.getElementById(titleId)?.focus({ preventScroll: true });
+    if (initial.type !== 'form' && initial.type !== 'search') document.getElementById(titleId)?.focus({ preventScroll: true });
   }, [initial.type, titleId]);
 
   return (

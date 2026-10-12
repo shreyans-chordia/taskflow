@@ -27,6 +27,8 @@ vi.mock('../desk/Desk', () => ({
         <button type="button" onClick={() => open('tray:c2', 'Health')}>health tray</button>
         <button type="button" onClick={() => open('note:t1', 'Gym session')}>gym note</button>
         <button type="button" onClick={() => open('add', 'Add Task')}>green key</button>
+        <button type="button" onClick={() => open('search', 'Search')}>blue key</button>
+        <button type="button" onClick={() => open('calendar', 'Wall calendar')}>wall calendar</button>
         <button type="button" onClick={props.onToggleLamp}>lamp</button>
       </div>
     );
@@ -70,7 +72,7 @@ describe('<Home> on a browser that can draw 3D', () => {
     renderHome();
     expect(await screen.findByTestId('desk')).toBeInTheDocument();
     await waitFor(() => expect(deskProps.current?.data.tasks.map((t) => t.title)).toEqual(['Gym session', 'Lab record']));
-    expect(screen.getByText('Signed in as')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'TaskFlow account menu, signed in as Shreyans' })).toBeInTheDocument();
   });
 
   it('opens the task list when the corkboard is clicked, and Escape closes it (TASK-2)', async () => {
@@ -107,6 +109,21 @@ describe('<Home> on a browser that can draw 3D', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'green key' }));
     expect(await screen.findByRole('dialog', { name: 'New task' })).toBeInTheDocument();
     await waitFor(() => expect(screen.getByLabelText('Title')).toHaveFocus());
+  });
+
+  it('the search key opens search with the cursor in the search box (SF-1)', async () => {
+    renderHome();
+    await userEvent.click(await screen.findByRole('button', { name: 'blue key' }));
+    expect(await screen.findByRole('dialog', { name: 'Search & filter' })).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByRole('searchbox', { name: 'Search' })).toHaveFocus());
+  });
+
+  it('the wall calendar opens this month (CAL-1)', async () => {
+    renderHome();
+    await userEvent.click(await screen.findByRole('button', { name: 'wall calendar' }));
+    const month = new Date().toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+    expect(await screen.findByRole('dialog', { name: month })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: month })).toHaveFocus();
   });
 
   it('the lamp switches the theme', async () => {

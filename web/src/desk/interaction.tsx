@@ -1,4 +1,5 @@
 import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
+import { frameStep } from './frame';
 import { createContext, useContext, useRef, type ReactNode, type RefObject } from 'react';
 import * as THREE from 'three';
 import type { V3 } from './three/kit';
@@ -50,7 +51,7 @@ export function Hit({ target, children }: { target: Target; children: ReactNode 
     if (!g || target.lift === 'none') return;
     const goal = desk.hovered.current?.target.key === target.key ? 1 : 0;
     if (t.current === goal) return;
-    const k = desk.reducedMotion ? 1 : 1 - Math.exp(-Math.min(0.05, dt) * 1000 / 70);
+    const k = desk.reducedMotion ? 1 : 1 - Math.exp((-frameStep(dt) * 1000) / 70);
     let next = t.current + (goal - t.current) * k;
     if (Math.abs(goal - next) < 0.002) next = goal;
     t.current = next;

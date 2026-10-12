@@ -1,11 +1,12 @@
-import { Canvas, useThree } from '@react-three/fiber';
-import { useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { useCallback, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import * as THREE from 'three';
 import { CameraController } from './camera';
 import { DeskContext, TagTracker, type DeskApi, type Target } from './interaction';
 import type { DeskData } from './model';
 import { Corkboard, Keys, Lamp, Notebook, PomodoroClock, RAIL_TARGETS, Trays, WallCalendar } from './objects';
 import { isSoftwareRenderer } from './quality';
+import { RubberRail } from './RubberRail';
 import { Kit, color, disposeTree } from './three/kit';
 import { buildRoom } from './three/room';
 import './desk.css';
@@ -41,6 +42,12 @@ function useReducedMotion(): boolean {
   return reduced;
 }
 
+/** Which rail item stands for an object: a note is on the corkboard (Tasks), a tray is a category. */
+const railKeyFor = (key: string) => {
+  const kind = key.split(':')[0]!;
+  return kind === 'note' ? 'board' : kind === 'tray' ? 'categories' : kind;
+};
+
 /** The 3D desk: the app's home screen. Click any object (or use the rail) to open what it stands for. */
 export default function Desk({ data, night, onToggleLamp, onOpen, panelOpen }: DeskProps) {
   const reducedMotion = useReducedMotion();
@@ -60,6 +67,8 @@ export default function Desk({ data, night, onToggleLamp, onOpen, panelOpen }: D
   const interactive = useRef(false);
   const hovered = useRef<{ target: Target; obj: THREE.Object3D } | null>(null);
   const busy = useRef(false);
+  /** The rail item for the panel being opened, where the rail's thumb rests while it is open. */
+  const [railKey, setRailKey] = useState<string | null>(null);
   const wasOpen = useRef(panelOpen);
   const drag = useRef<{ x: number; pan: number; moved: boolean } | null>(null);
   const returnFocus = useRef<HTMLElement | null>(null);
@@ -89,6 +98,7 @@ export default function Desk({ data, night, onToggleLamp, onOpen, panelOpen }: D
       if (busy.current || !cam) return;
       busy.current = true;
       interactive.current = false;
+      setRailKey(railKeyFor(target.key));
       setHovered(null);
       if (target.view && target.focus) await cam.flyToObject(target.view, target.focus, () => onOpen(target));
       else onOpen(target);
@@ -104,7 +114,10 @@ export default function Desk({ data, night, onToggleLamp, onOpen, panelOpen }: D
       void (async () => {
         if (cam?.atObject) await new Promise((r) => setTimeout(r, reducedMotion ? 0 : 90)).then(() => cam.flyHome());
         interactive.current = true;
-        if (returnFocus.current?.isConnected) returnFocus.current.focus({ preventScroll: true });
+        // Only when focus was lost with the panel: if the user has moved on meanwhile (opened the account menu
+        // during the flight home), leave their focus where it is.
+        const lost = !document.activeElement || document.activeElement === document.body;
+        if (lost && returnFocus.current?.isConnected) returnFocus.current.focus({ preventScroll: true });
         returnFocus.current = null;
       })();
     }
@@ -178,25 +191,23 @@ export default function Desk({ data, night, onToggleLamp, onOpen, panelOpen }: D
 
       <HoverTag ref={tagRef} hidden={panelOpen} />
 
-      <nav className="desk-rail" aria-label="Desk shortcuts" hidden={!ready}>
-        <div className="desk-rail-inner glass">
-          {RAIL.map(([key, label]) => (
-            <button
-              key={key}
-              type="button"
-              aria-label={key === 'lamp' ? `Lamp: switch to ${night ? 'light' : 'dark'} mode` : undefined}
-              disabled={panelOpen}
-              onClick={(e) => {
-                returnFocus.current = e.currentTarget;
-                if (key === 'lamp') onToggleLamp();
-                else void activate(RAIL_TARGETS[key]!);
-              }}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      </nav>
+      {ready && (
+        <RubberRail
+          label="Desk shortcuts"
+          active={panelOpen ? railKey : null}
+          disabled={panelOpen}
+          items={RAIL.map(([key, label]) => ({
+            key,
+            label,
+            ariaLabel: key === 'lamp' ? `Lamp: switch to ${night ? 'light' : 'dark'} mode` : undefined,
+            onClick: (e) => {
+              returnFocus.current = e.currentTarget;
+              if (key === 'lamp') onToggleLamp();
+              else void activate(RAIL_TARGETS[key]!);
+            },
+          }))}
+        />
+      )}
 
       <div className={`desk-loading${ready ? ' gone' : ''}`} role="status" aria-live="polite">
         <span>Setting up your desk…</span>
@@ -253,6 +264,22 @@ function Scene({ data, night, paused, reducedMotion, onController, onEntered }: 
   const [cam] = useState(() => new CameraController(camera, invalidate, () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false));
 
   useEffect(() => onController(cam), [cam, onController]);
+
+  // Each frame: move the camera first (so the frame shows where it is now), then decide about shadows. The room
+  // is static, so while only the camera moves the shadow maps from the last frame are still right; redrawing them
+  // (window light + lamp, 1024² each) on every frame of a flight was the heaviest part of it. They redraw on any
+  // other frame (hover lifts, lamp, data), on the frame a flight lands, and when something marks them dirty.
+  const shadowsDirty = useRef(true);
+  useLayoutEffect(() => {
+    const { shadowMap } = get().gl;
+    shadowMap.autoUpdate = false;
+    shadowMap.needsUpdate = true;
+  }, [get]);
+  useFrame((state) => {
+    cam.update(performance.now());
+    state.gl.shadowMap.needsUpdate = !cam.flying || shadowsDirty.current;
+    shadowsDirty.current = false;
+  });
   // Development builds only: lets devtools (and screenshot scripts) inspect and move the camera.
   useEffect(() => {
     if (import.meta.env.DEV) (window as unknown as { __desk?: object }).__desk = { cam, camera, get };
@@ -264,6 +291,7 @@ function Scene({ data, night, paused, reducedMotion, onController, onEntered }: 
   // Theme: dusk with the lamp off, or night with the lamp on.
   useEffect(() => {
     room.setNight(night);
+    shadowsDirty.current = true; // the lamp's light (and its shadow) comes and goes with the theme
     const s = get();
     s.scene.background = color(night ? '#07080C' : '#120F0D');
     s.gl.toneMappingExposure = night ? 1.12 : 1.05;

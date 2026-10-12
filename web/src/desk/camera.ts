@@ -32,7 +32,20 @@ export class CameraController {
   flying = false;
   atObject = false;
   panX = 0;
-  private flyId = 0;
+  private flight: {
+    t0: number;
+    ms: number;
+    p0: THREE.Vector3;
+    l0: THREE.Vector3;
+    f0: number;
+    f1: number;
+    ctrl: THREE.Vector3;
+    pos: THREE.Vector3;
+    lookAt: THREE.Vector3;
+    at?: [number, () => void];
+    fired: boolean;
+    done: () => void;
+  } | null = null;
 
   constructor(
     private readonly camera: THREE.PerspectiveCamera,
@@ -95,44 +108,55 @@ export class CameraController {
     return Math.round(Math.min(1250, Math.max(820, 700 + this.camera.position.distanceTo(to) * 300)));
   }
 
-  /** A gentle arc, drifting back and up a little mid-flight like a hand-held dolly; the eye turns slightly ahead of the body. */
+  /**
+   * A gentle arc, drifting back and up a little mid-flight like a hand-held dolly; the eye turns slightly ahead of
+   * the body. This only plans the flight: `update` advances it from inside the renderer's frame loop, so every frame
+   * drawn shows exactly where the camera is at that moment (a second requestAnimationFrame loop beside the
+   * renderer's drew some frames before the move and some after it, which made the motion judder).
+   */
   fly(pos: THREE.Vector3, lookAt: THREE.Vector3, ms: number, o: { fov?: number; at?: [number, () => void] } = {}): Promise<void> {
-    const id = ++this.flyId;
+    this.flight?.done(); // a new flight replaces one still under way
     const cam = this.camera;
-    this.flying = true;
     if (this.reducedMotion()) ms = Math.min(ms, 160);
     const p0 = cam.position.clone(), l0 = this.look.clone(), f0 = cam.fov, f1 = o.fov ?? f0;
     const d = p0.distanceTo(pos), mid = p0.clone().lerp(pos, 0.5), lm = l0.clone().lerp(lookAt, 0.5);
     const ctrl = mid.clone().add(mid.clone().sub(lm).normalize().multiplyScalar(d * 0.12)).add(new THREE.Vector3(0, d * 0.05, 0));
-    let fired = false;
+    this.flying = true;
     return new Promise((resolve) => {
-      const t0 = performance.now();
-      const step = (now: number) => {
-        if (id !== this.flyId) return resolve();
-        const x = Math.min(1, (now - t0) / ms), t = EASE(x), tl = EASE(Math.min(1, x * 1.15)), u = 1 - t;
-        cam.position.set(
-          u * u * p0.x + 2 * u * t * ctrl.x + t * t * pos.x,
-          u * u * p0.y + 2 * u * t * ctrl.y + t * t * pos.y,
-          u * u * p0.z + 2 * u * t * ctrl.z + t * t * pos.z,
-        );
-        this.look.lerpVectors(l0, lookAt, tl);
-        if (f1 !== f0) {
-          cam.fov = f0 + (f1 - f0) * t;
-          cam.updateProjectionMatrix();
-        }
-        cam.lookAt(this.look);
-        this.invalidate();
-        if (!fired && o.at && x >= o.at[0]) {
-          fired = true;
-          o.at[1]();
-        }
-        if (x < 1) requestAnimationFrame(step);
-        else {
-          this.flying = false;
-          resolve();
-        }
-      };
-      requestAnimationFrame(step);
+      // t0 is set by the first frame that draws the flight, so it starts from rest wherever the click landed.
+      this.flight = { t0: -1, ms, p0, l0, f0, f1, ctrl, pos: pos.clone(), lookAt: lookAt.clone(), at: o.at, fired: false, done: resolve };
+      this.invalidate();
     });
+  }
+
+  /** Called once per rendered frame, before drawing. Moves the camera along the current flight, if there is one. */
+  update(now: number): void {
+    const f = this.flight;
+    if (!f) return;
+    if (f.t0 < 0) f.t0 = now;
+    const cam = this.camera;
+    const x = Math.min(1, (now - f.t0) / f.ms), t = EASE(x), tl = EASE(Math.min(1, x * 1.15)), u = 1 - t;
+    cam.position.set(
+      u * u * f.p0.x + 2 * u * t * f.ctrl.x + t * t * f.pos.x,
+      u * u * f.p0.y + 2 * u * t * f.ctrl.y + t * t * f.pos.y,
+      u * u * f.p0.z + 2 * u * t * f.ctrl.z + t * t * f.pos.z,
+    );
+    this.look.lerpVectors(f.l0, f.lookAt, tl);
+    if (f.f1 !== f.f0) {
+      cam.fov = f.f0 + (f.f1 - f.f0) * t;
+      cam.updateProjectionMatrix();
+    }
+    cam.lookAt(this.look);
+    if (!f.fired && f.at && x >= f.at[0]) {
+      f.fired = true;
+      f.at[1]();
+    }
+    if (x < 1) {
+      this.invalidate(); // ask for the next frame
+    } else {
+      this.flight = null;
+      this.flying = false;
+      f.done();
+    }
   }
 }

@@ -1,4 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
+import { monthOf } from './calendar';
+import { CalendarView } from './CalendarView';
+import { today } from './format';
+import { DEFAULT_FILTERS, SearchView, type SearchFilters } from './SearchView';
 import { TaskDetail } from './TaskDetail';
 import { TaskForm } from './TaskForm';
 import { TaskList } from './TaskList';
@@ -8,37 +12,45 @@ import './tasks.css';
 export type TaskView =
   | { type: 'list'; categoryId?: string; eyebrow?: string; heading?: string; focusAdd?: boolean; message?: string }
   | { type: 'detail'; id: string }
-  | { type: 'form'; id?: string; categoryId?: string; date?: string };
+  | { type: 'form'; id?: string; categoryId?: string; date?: string }
+  /** The month ("YYYY-MM") and the selected day; both default to today. */
+  | { type: 'calendar'; month?: string; day?: string }
+  | { type: 'search'; filters?: SearchFilters };
+
+/** The section a stack starts on, for the 2D page's tabs. */
+export type TaskSection = 'list' | 'calendar' | 'search';
 
 /**
- * The task screens and the way between them: list → task → edit, with Back retracing the steps.
+ * The task screens and the way between them: list, calendar or search → task → edit, with Back retracing the steps.
  * Backing out of the first screen calls `onExit` (the desk closes its panel); without one, Back is hidden there.
  */
 export function TaskViews({ titleId, initial, onExit }: { titleId: string; initial: TaskView; onExit?: () => void }) {
   const [stack, setStack] = useState<TaskView[]>([initial]);
   const view = stack[stack.length - 1]!;
   const { tasks } = useTaskData();
-  const first = useRef(true);
 
   const push = (v: TaskView) => setStack((s) => [...s, v]);
   const replace = (v: TaskView) => setStack((s) => [...s.slice(0, -1), v]);
   const back = () => (stack.length > 1 ? setStack((s) => s.slice(0, -1)) : onExit?.());
-  /** Back to the list, whatever came before (after a delete there is nothing to go back to). */
-  const toList = (message?: string) => {
-    const list = stack.find((v) => v.type === 'list');
-    setStack([list ? { ...list, message } : { type: 'list', message }]);
+  /** Back to where this started (the list, calendar or search), whatever came between: after a delete there is nothing to go back to. */
+  const toStart = (message?: string) => {
+    const start = stack.find((v) => v.type === 'list' || v.type === 'calendar' || v.type === 'search');
+    setStack([!start ? { type: 'list', message } : start.type === 'list' ? { ...start, message } : start]);
   };
 
   // Each screen change moves focus to its heading, so keyboard and screen-reader users land at the top.
+  // A screen updating its own state (a month, a filter) is not a screen change and leaves focus alone.
+  const screen = `${stack.length}:${view.type}:${view.type === 'detail' || view.type === 'form' ? (view.id ?? '') : ''}`;
+  const shown = useRef(screen);
+  // (Compared with the last screen rather than a "first run" flag, which StrictMode's double effects would use up.)
   useEffect(() => {
-    if (first.current) {
-      first.current = false;
-      return;
-    }
-    if (view.type === 'form' && !view.id) return; // the title field takes focus instead
+    if (shown.current === screen) return;
+    shown.current = screen;
+    const kind = screen.split(':')[1];
+    if (kind === 'form' && !screen.split(':')[2]) return; // the title field takes focus instead
     document.getElementById(titleId)?.focus({ preventScroll: true });
     document.getElementById(titleId)?.closest('.panel-card, .wb-card')?.scrollTo?.({ top: 0 });
-  }, [view, titleId]);
+  }, [screen, titleId]);
 
   const canGoBack = stack.length > 1 || !!onExit;
 
@@ -62,8 +74,27 @@ export function TaskViews({ titleId, initial, onExit }: { titleId: string; initi
           onAddFull={() => push({ type: 'form', categoryId: view.categoryId })}
         />
       )}
+      {view.type === 'calendar' && (
+        <CalendarView
+          titleId={titleId}
+          month={view.month ?? monthOf(view.day ?? today())}
+          day={view.day ?? today()}
+          onChange={(v) => replace({ type: 'calendar', ...v })}
+          onOpen={(id) => push({ type: 'detail', id })}
+          onAdd={(date) => push({ type: 'form', date })}
+        />
+      )}
+      {view.type === 'search' && (
+        <SearchView
+          titleId={titleId}
+          filters={view.filters ?? DEFAULT_FILTERS}
+          onChange={(filters) => replace({ type: 'search', filters })}
+          onOpen={(id) => push({ type: 'detail', id })}
+          autoFocus={stack.length === 1 && !!onExit}
+        />
+      )}
       {view.type === 'detail' && (
-        <TaskDetail key={view.id} id={view.id} titleId={titleId} onEdit={() => push({ type: 'form', id: view.id })} onDeleted={(title) => toList(`Deleted “${title}”.`)} />
+        <TaskDetail key={view.id} id={view.id} titleId={titleId} onEdit={() => push({ type: 'form', id: view.id })} onDeleted={(title) => toStart(`Deleted “${title}”.`)} />
       )}
       {view.type === 'form' &&
         (view.id && tasks.isPending ? (

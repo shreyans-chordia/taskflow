@@ -1,6 +1,7 @@
 import { useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
+import { frameStep } from './frame';
 import { Hit, type Target } from './interaction';
 import { boardOrder, dueLabel, isLate, openCountByCategory, weekSummary, type DeskData, type DeskTask } from './model';
 import { add, B, C, color, disposeTree, group, Kit, repaint, std, type PaintedTexture, type V3 } from './three/kit';
@@ -346,7 +347,7 @@ export function Lamp({ kit, on, reducedMotion }: { kit: Kit; on: boolean; reduce
   useFrame((_, dt) => {
     const cur = built.level;
     if (cur === goal) return;
-    const step = reducedMotion ? 1 : dt / 0.4;
+    const step = reducedMotion ? 1 : frameStep(dt) / 0.4;
     setLampLevel(built, goal > cur ? Math.min(goal, cur + step) : Math.max(goal, cur - step));
     invalidate();
   });

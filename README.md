@@ -6,8 +6,9 @@ calendar, categories are trays on a shelf, and a Pomodoro clock ticks on the des
 > Status: the secure REST API (`server/`) and the React front end (`web/`) are connected, and the home screen is the
 > live 3D desk (React Three Fiber), drawn from your real tasks. Clicking an object flies the camera to it and opens a
 > panel: open a note to see the task and its checklist, edit every field (categories, priority, deadline and time), or
-> add a task with a live sticky-note preview. Calendar, search, weekly review and Pomodoro panels come next.
-> Browsers without WebGL get the same task list as a plain 2D page.
+> add a task with a live sticky-note preview. The wall calendar opens a month of deadlines, and the search key finds
+> tasks by keyword, category, priority and status. Weekly review, category managers and Pomodoro panels come next.
+> Browsers without WebGL get the same screens as a plain 2D page.
 
 ## Stack
 
