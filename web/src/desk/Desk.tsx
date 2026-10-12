@@ -6,6 +6,7 @@ import { DeskContext, TagTracker, type DeskApi, type Target } from './interactio
 import type { DeskData } from './model';
 import { Corkboard, Keys, Lamp, Notebook, PomodoroClock, RAIL_TARGETS, Trays, WallCalendar } from './objects';
 import { isSoftwareRenderer } from './quality';
+import { RubberRail } from './RubberRail';
 import { Kit, color, disposeTree } from './three/kit';
 import { buildRoom } from './three/room';
 import './desk.css';
@@ -41,6 +42,12 @@ function useReducedMotion(): boolean {
   return reduced;
 }
 
+/** Which rail item stands for an object: a note is on the corkboard (Tasks), a tray is a category. */
+const railKeyFor = (key: string) => {
+  const kind = key.split(':')[0]!;
+  return kind === 'note' ? 'board' : kind === 'tray' ? 'categories' : kind;
+};
+
 /** The 3D desk: the app's home screen. Click any object (or use the rail) to open what it stands for. */
 export default function Desk({ data, night, onToggleLamp, onOpen, panelOpen }: DeskProps) {
   const reducedMotion = useReducedMotion();
@@ -60,6 +67,8 @@ export default function Desk({ data, night, onToggleLamp, onOpen, panelOpen }: D
   const interactive = useRef(false);
   const hovered = useRef<{ target: Target; obj: THREE.Object3D } | null>(null);
   const busy = useRef(false);
+  /** The rail item for the panel being opened, where the rail's thumb rests while it is open. */
+  const [railKey, setRailKey] = useState<string | null>(null);
   const wasOpen = useRef(panelOpen);
   const drag = useRef<{ x: number; pan: number; moved: boolean } | null>(null);
   const returnFocus = useRef<HTMLElement | null>(null);
@@ -89,6 +98,7 @@ export default function Desk({ data, night, onToggleLamp, onOpen, panelOpen }: D
       if (busy.current || !cam) return;
       busy.current = true;
       interactive.current = false;
+      setRailKey(railKeyFor(target.key));
       setHovered(null);
       if (target.view && target.focus) await cam.flyToObject(target.view, target.focus, () => onOpen(target));
       else onOpen(target);
@@ -181,25 +191,23 @@ export default function Desk({ data, night, onToggleLamp, onOpen, panelOpen }: D
 
       <HoverTag ref={tagRef} hidden={panelOpen} />
 
-      <nav className="desk-rail" aria-label="Desk shortcuts" hidden={!ready}>
-        <div className="desk-rail-inner glass">
-          {RAIL.map(([key, label]) => (
-            <button
-              key={key}
-              type="button"
-              aria-label={key === 'lamp' ? `Lamp: switch to ${night ? 'light' : 'dark'} mode` : undefined}
-              disabled={panelOpen}
-              onClick={(e) => {
-                returnFocus.current = e.currentTarget;
-                if (key === 'lamp') onToggleLamp();
-                else void activate(RAIL_TARGETS[key]!);
-              }}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      </nav>
+      {ready && (
+        <RubberRail
+          label="Desk shortcuts"
+          active={panelOpen ? railKey : null}
+          disabled={panelOpen}
+          items={RAIL.map(([key, label]) => ({
+            key,
+            label,
+            ariaLabel: key === 'lamp' ? `Lamp: switch to ${night ? 'light' : 'dark'} mode` : undefined,
+            onClick: (e) => {
+              returnFocus.current = e.currentTarget;
+              if (key === 'lamp') onToggleLamp();
+              else void activate(RAIL_TARGETS[key]!);
+            },
+          }))}
+        />
+      )}
 
       <div className={`desk-loading${ready ? ' gone' : ''}`} role="status" aria-live="polite">
         <span>Setting up your desk…</span>
