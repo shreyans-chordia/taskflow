@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { AccountMenu } from '../components/AccountMenu';
-import { TaskViews, type TaskSection } from '../tasks/TaskViews';
+import { TaskViews, type TaskSection, type TaskView } from '../tasks/TaskViews';
 import './workbench.css';
 
 /**
@@ -11,7 +11,10 @@ const SECTIONS: Array<[TaskSection, string]> = [
   ['list', 'Tasks'],
   ['calendar', 'Calendar'],
   ['search', 'Search'],
+  ['categories', 'Categories'],
 ];
+
+const INITIAL: Record<TaskSection, TaskView> = { list: { type: 'list' }, calendar: { type: 'calendar' }, search: { type: 'search' }, categories: { type: 'categories' } };
 
 export function Workbench({ onToggleTheme }: { onToggleTheme: () => void }) {
   const [section, setSection] = useState<{ name: TaskSection; n: number }>({ name: 'list', n: 0 });
@@ -35,7 +38,7 @@ export function Workbench({ onToggleTheme }: { onToggleTheme: () => void }) {
         ))}
       </nav>
       <main className="wb-card glass" aria-labelledby="wb-title">
-        <TaskViews key={section.n} titleId="wb-title" initial={section.name === 'calendar' ? { type: 'calendar' } : section.name === 'search' ? { type: 'search' } : { type: 'list' }} />
+        <TaskViews key={section.n} titleId="wb-title" initial={INITIAL[section.name]} />
       </main>
     </div>
   );

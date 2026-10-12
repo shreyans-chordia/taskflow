@@ -5,7 +5,7 @@ useDb();
 
 async function setup() {
   const c = await Client.signedUp();
-  const cats = (await c.get('/api/categories')).body.categories as Array<{ id: string; name: string; locked: boolean }>;
+  const cats = (await c.get('/api/categories')).body.categories as Array<{ id: string; name: string; color: string; locked: boolean }>;
   const prios = (await c.get('/api/priorities')).body.priorities as Array<{ id: string; name: string; isDefault: boolean }>;
   const cat = (n: string) => cats.find((x) => x.name === n)!;
   const pr = (n: string) => prios.find((x) => x.name === n)!;
@@ -144,10 +144,66 @@ describe('priority levels', () => {
     expect(urgent.order).toBe(0);
   });
 
+  it('sets the default level for new tasks, and hands it on when that level is deleted (PR-2)', async () => {
+    const { c, pr } = await setup();
+    expect(pr('Medium').isDefault).toBe(true);
+    const res = await c.patch(`/api/priorities/${pr('Low').id}`, { isDefault: true });
+    expect(res.body.priority.isDefault).toBe(true);
+    let list = (await c.get('/api/priorities')).body.priorities as Array<{ name: string; isDefault: boolean }>;
+    expect(list.filter((p) => p.isDefault).map((p) => p.name)).toEqual(['Low']); // only ever one default
+    expect((await c.post('/api/tasks', { title: 'Quiet' })).body.task.priorityId).toBe(pr('Low').id);
+
+    // Low is the last level, so its tasks (and the default) move up to Medium.
+    await c.del(`/api/priorities/${pr('Low').id}`);
+    list = (await c.get('/api/priorities')).body.priorities;
+    expect(list.filter((p) => p.isDefault).map((p) => p.name)).toEqual(['Medium']);
+  });
+
+  it('renames and recolours a level, keeping names unique (PR-1)', async () => {
+    const { c, pr } = await setup();
+    const res = await c.patch(`/api/priorities/${pr('High').id}`, { name: 'Urgent', color: '#C2185B' });
+    expect(res.body.priority).toMatchObject({ name: 'Urgent', color: '#C2185B' });
+    expect((await c.patch(`/api/priorities/${pr('Low').id}`, { name: 'urgent' })).status).toBe(409);
+  });
+
+  it('reorders levels only when given every id exactly once', async () => {
+    const { c, prios } = await setup();
+    const ids = prios.map((x) => x.id).reverse();
+    const res = await c.put('/api/priorities/order', { ids });
+    expect(res.body.priorities.map((p: { id: string }) => p.id)).toEqual(ids);
+    expect((await c.put('/api/priorities/order', { ids: [ids[0], ids[0], ids[1]] })).status).toBe(400);
+  });
+
   it('keeps at least one level', async () => {
     const { c, prios } = await setup();
     await c.del(`/api/priorities/${prios[0]!.id}`);
     await c.del(`/api/priorities/${prios[1]!.id}`);
     expect((await c.del(`/api/priorities/${prios[2]!.id}`)).status).toBe(400);
+  });
+});
+
+describe('categories and priority levels belong to one account', () => {
+  it("never lets another account rename, recolour, reorder or delete them", async () => {
+    const a = await setup();
+    const b = await setup();
+    const study = a.cat('Study');
+    const high = a.pr('High');
+
+    expect((await b.c.patch(`/api/categories/${study.id}`, { name: 'Mine' })).status).toBe(404);
+    expect((await b.c.patch(`/api/categories/${study.id}`, { color: '#000000' })).status).toBe(404);
+    expect((await b.c.del(`/api/categories/${study.id}`)).status).toBe(404);
+    expect((await b.c.patch(`/api/priorities/${high.id}`, { name: 'Mine' })).status).toBe(404);
+    expect((await b.c.patch(`/api/priorities/${high.id}`, { isDefault: true })).status).toBe(404);
+    expect((await b.c.del(`/api/priorities/${high.id}`)).status).toBe(404);
+    // Someone else's ids are not "every one of your ids".
+    expect((await b.c.put('/api/categories/order', { ids: a.cats.map((x) => x.id) })).status).toBe(400);
+    expect((await b.c.put('/api/priorities/order', { ids: a.prios.map((x) => x.id) })).status).toBe(400);
+
+    // A's are untouched.
+    const cats = (await a.c.get('/api/categories')).body.categories as Array<{ id: string; name: string; color: string }>;
+    expect(cats.find((x) => x.id === study.id)).toMatchObject({ name: 'Study', color: study.color });
+    const prios = (await a.c.get('/api/priorities')).body.priorities as Array<{ id: string; name: string; isDefault: boolean }>;
+    expect(prios.map((p) => p.id)).toEqual(a.prios.map((p) => p.id));
+    expect(prios.find((p) => p.id === high.id)).toMatchObject({ name: 'High', isDefault: false });
   });
 });

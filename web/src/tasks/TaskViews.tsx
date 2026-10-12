@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { monthOf } from './calendar';
 import { CalendarView } from './CalendarView';
+import { CategoriesView } from './CategoriesView';
 import { today } from './format';
+import { OrganizeView } from './OrganizeView';
 import { DEFAULT_FILTERS, SearchView, type SearchFilters } from './SearchView';
 import { TaskDetail } from './TaskDetail';
 import { TaskForm } from './TaskForm';
@@ -15,10 +17,13 @@ export type TaskView =
   | { type: 'form'; id?: string; categoryId?: string; date?: string }
   /** The month ("YYYY-MM") and the selected day; both default to today. */
   | { type: 'calendar'; month?: string; day?: string }
-  | { type: 'search'; filters?: SearchFilters };
+  | { type: 'search'; filters?: SearchFilters }
+  | { type: 'organize' }
+  /** The category board; no categoryId is "All". */
+  | { type: 'categories'; categoryId?: string };
 
 /** The section a stack starts on, for the 2D page's tabs. */
-export type TaskSection = 'list' | 'calendar' | 'search';
+export type TaskSection = 'list' | 'calendar' | 'search' | 'categories';
 
 /**
  * The task screens and the way between them: list, calendar or search → task → edit, with Back retracing the steps.
@@ -32,10 +37,15 @@ export function TaskViews({ titleId, initial, onExit }: { titleId: string; initi
   const push = (v: TaskView) => setStack((s) => [...s, v]);
   const replace = (v: TaskView) => setStack((s) => [...s.slice(0, -1), v]);
   const back = () => (stack.length > 1 ? setStack((s) => s.slice(0, -1)) : onExit?.());
-  /** Back to where this started (the list, calendar or search), whatever came between: after a delete there is nothing to go back to. */
+  /**
+   * After a delete there is nothing to go back to: return to the nearest screen the task was found on (a list, the
+   * calendar, search or the organizer), keeping the way back from there.
+   */
   const toStart = (message?: string) => {
-    const start = stack.find((v) => v.type === 'list' || v.type === 'calendar' || v.type === 'search');
-    setStack([!start ? { type: 'list', message } : start.type === 'list' ? { ...start, message } : start]);
+    const at = stack.findLastIndex((v) => v.type === 'list' || v.type === 'calendar' || v.type === 'search' || v.type === 'categories' || v.type === 'organize');
+    if (at < 0) return setStack([{ type: 'list', message }]);
+    const home = stack[at]!;
+    setStack([...stack.slice(0, at), home.type === 'list' ? { ...home, message } : home]);
   };
 
   // Each screen change moves focus to its heading, so keyboard and screen-reader users land at the top.
@@ -92,6 +102,18 @@ export function TaskViews({ titleId, initial, onExit }: { titleId: string; initi
           onOpen={(id) => push({ type: 'detail', id })}
           autoFocus={stack.length === 1 && !!onExit}
         />
+      )}
+      {view.type === 'categories' && (
+        <CategoriesView
+          titleId={titleId}
+          categoryId={view.categoryId}
+          onPick={(categoryId) => replace({ type: 'categories', categoryId })}
+          onOpen={(id) => push({ type: 'detail', id })}
+          onManage={() => push({ type: 'organize' })}
+        />
+      )}
+      {view.type === 'organize' && (
+        <OrganizeView titleId={titleId} onOpenCategory={(c) => push({ type: 'list', categoryId: c.id, eyebrow: 'Category', heading: c.name })} />
       )}
       {view.type === 'detail' && (
         <TaskDetail key={view.id} id={view.id} titleId={titleId} onEdit={() => push({ type: 'form', id: view.id })} onDeleted={(title) => toStart(`Deleted “${title}”.`)} />

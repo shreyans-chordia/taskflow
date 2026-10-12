@@ -98,11 +98,10 @@
 .tv-clear { align-self: flex-start; font-size: 13px; margin-top: -10px }
 .tv-foot { display: flex; gap: 12px; padding-top: 16px; border-top: 1px solid var(--g-line) }
 .tv-quick { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 10px; padding: 12px; border-radius: 12px; background: var(--g-cell); box-shadow: inset 0 0 0 1px var(--g-line) }
+.tv-quick .field-input input { min-height: 44px; font: 400 15px/1 var(--f-ui) }
+.tv-quick-pos { flex: 0 1 auto; min-height: 44px; cursor: pointer }
 .tv-quick-name { flex: 1 1 160px }
 .tv-quick .btn { min-height: 40px }
-.tv-swatches { display: flex; flex-wrap: wrap; gap: 6px }
-.tv-swatch { width: 26px; height: 26px; border: 0; border-radius: 50%; cursor: pointer; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .2) }
-.tv-swatch[aria-checked="true"] { box-shadow: 0 0 0 2px var(--g-solid), 0 0 0 4px var(--g-ink) }
 .tv-quick-err { flex-basis: 100% }
 
 /* calendar: a month of deadlines and the selected day beside it (CAL-1..CAL-4) */
@@ -147,6 +146,59 @@ button.cal-num:hover { background: var(--g-field) }
 .sf-count .link { font-size: 13px }
 .sf-none { margin: 0; padding: 16px; border: 1.5px dashed var(--g-line); border-radius: 12px; color: var(--g-ink); font-weight: 500 }
 
+/* organizer: categories & priority levels (CAT-1, CAT-4, CAT-5, PR-1..PR-3) */
+.org { display: flex; flex-direction: column; gap: 18px }
+.org-sec { display: flex; flex-direction: column; gap: 10px }
+.org-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px }
+.org-h { margin: 0; color: var(--g-ink) }
+.org-h:focus { outline: none }
+.org-head .wb-note { margin: 0; font-size: 13px }
+.org-list { list-style: none; margin: 0; padding: 0; border-top: 1.5px solid var(--g-ink) }
+.org-row { display: flex; align-items: center; gap: 10px; min-height: 58px; padding: 6px 2px; border-bottom: 1px solid var(--g-line) }
+.org-name { flex: 1 1 140px; min-width: 0 }
+/* names sit in boxed fields, as in the room; the locked fallback gets a dotted underline (beats base.css) */
+.org-row .org-name input { min-height: 40px; padding: 0 10px; font: 400 15px/1 var(--f-ui) }
+.org-row .org-name input[readonly] { border-bottom-style: dotted; color: var(--g-sub); cursor: default }
+.org-count { flex: none; width: 66px; padding: 0; border: 0; background: none; font: 500 12px/1 var(--f-mono); color: var(--g-sub); text-align: right; white-space: nowrap }
+button.org-count { cursor: pointer; text-decoration: none }
+button.org-count:hover { color: var(--pen); text-decoration: underline; text-underline-offset: 3px }
+.org-tag { flex: none; width: 108px; box-sizing: border-box; padding: 5px 9px; border: 1px dashed var(--g-line); border-radius: 99px; background: transparent; color: var(--g-sub); font: 600 11px/1 var(--f-label); letter-spacing: .1em; text-transform: uppercase; text-align: center; white-space: nowrap }
+.org-tag.on { border: 0; background: var(--g-cell); box-shadow: inset 0 0 0 1px var(--g-line); color: var(--g-ink) }
+.org-make { cursor: pointer; border-color: var(--pen); color: var(--pen) }
+.org-make:hover { background: color-mix(in srgb, var(--pen) 10%, transparent) }
+.org-moves { display: flex; gap: 2px; flex: none }
+.org-mv { min-height: 38px; min-width: 38px; padding: 0; color: var(--g-ink); font: 700 17px/1 var(--f-ui) }
+.org-del { min-height: 38px; padding: 0 10px; flex: none; color: var(--g-ink); font: 700 14px/1 var(--f-ui) }
+.org-row .btn:disabled { opacity: .35; cursor: default }
+.org-div { display: flex; align-items: center; gap: 10px; padding: 12px 4px 6px; font: 600 12px/1.3 var(--f-ui); color: var(--g-sub) }
+.org-div::before, .org-div::after { content: ""; flex: 1; border-top: 1.5px dashed var(--g-ink); opacity: .45 }
+.org-confirm { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin: 6px 0; padding: 12px 14px; border-radius: 12px; box-shadow: inset 0 0 0 1.5px var(--coral); background: color-mix(in srgb, var(--coral) 8%, transparent) }
+.org-err { padding: 6px 4px 8px 52px }
+.org-add { align-self: flex-start; min-height: 42px }
+
+/* categories board, as in the room: chips with counts, then that category's notes pinned to cork (CAT-2) */
+.cat-chips { display: flex; flex-wrap: wrap; gap: 8px; padding-right: 36px }
+.fchip { display: inline-flex; align-items: center; gap: 7px; min-height: 44px; padding: 0 14px; border: 1.5px solid var(--g-ink); border-radius: 99px; background: var(--g-field); color: var(--g-ink); font: 600 14px/1 var(--f-ui); cursor: pointer }
+.fchip[aria-pressed="true"] { background: var(--pen); border-color: var(--pen); color: var(--on-pen) }
+.fchip .n { font: 500 12px/1 var(--f-mono); opacity: .8 }
+.cdot { width: 10px; height: 10px; flex: none; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .15) }
+.cork { display: grid; grid-template-columns: repeat(auto-fill, minmax(196px, 1fr)); gap: 24px; align-items: start; min-height: 300px; padding: 26px; border: 1px solid #6E4A28; border-radius: 12px;
+  background: radial-gradient(rgba(70, 40, 10, .22) 1.2px, transparent 1.6px) 0 0 / 9px 9px, #B5853F; box-shadow: inset 0 2px 14px rgba(43, 28, 10, .55) }
+.cork-empty { grid-column: 1 / -1; margin: 0; padding: 40px; text-align: center; font: 700 30px/1.1 var(--f-script); color: #FDF9F0 }
+.cork-note { display: block; width: 100%; padding: 0; border: 0; background: none; text-align: left; font: inherit; color: inherit; cursor: pointer; transform: rotate(var(--tilt, 0deg)); transition: transform 160ms ease-out }
+.cork-note:hover, .cork-note:focus-visible { transform: rotate(var(--tilt, 0deg)) translateY(-3px) }
+.cork-note:focus-visible { outline: 2px solid #FDF9F0; outline-offset: 5px }
+/* the note at board size: smaller than the preview beside a task, and tilted by its button instead */
+.cork-note .pn { min-height: 178px; transform: none }
+.cork-note .pn-title { font-size: 27px }
+.cork-note .pn-line { font-size: 13px }
+.cork-note .pn-meta { font-size: 12px }
+.cork-note:hover .pn, .cork-note:focus-visible .pn { filter: drop-shadow(0 18px 16px rgba(0, 0, 0, .4)) }
+.cat-foot { justify-content: space-between }
+.cat-manage { min-height: 42px; font-size: 14px }
+.cat-manage svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round }
+@media (prefers-reduced-motion: reduce) { .cork-note { transition: none } }
+
 @media (max-width: 760px) {
   .tv-split { grid-template-columns: minmax(0, 1fr); gap: 18px }
   .tv-note { position: static; padding-top: 0; justify-items: center }
@@ -173,4 +225,20 @@ button.cal-num:hover { background: var(--g-field) }
   .cal-dn { flex-direction: column; align-items: flex-start; gap: 2px }
   /* too narrow for titles: the Ring says how many, the selected day lists them */
   .cal-task, .cal-more { display: none }
+}
+
+@media (max-width: 640px) {
+  /* two lines per row: colour, name and Delete; then the count, the tag and the arrows */
+  .org-row { flex-wrap: wrap; row-gap: 2px; column-gap: 8px }
+  .org-name { flex: 1 1 calc(100% - 140px) }
+  .org-list[aria-label="Priority levels"] .org-name { flex-basis: calc(100% - 172px) }
+  .org-del { order: 1 }
+  .org-count, .org-tag, .org-moves { order: 2 }
+  .org-count { width: auto; text-align: left; margin-left: 48px }
+  .org-moves { margin-left: auto }
+  .org-err { padding-left: 6px }
+}
+
+@media (max-width: 480px) {
+  .cork { grid-template-columns: minmax(0, 1fr); padding: 18px; gap: 18px }
 }
