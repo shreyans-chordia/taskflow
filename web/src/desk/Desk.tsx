@@ -1,5 +1,5 @@
-import { Canvas, useThree } from '@react-three/fiber';
-import { useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { useCallback, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import * as THREE from 'three';
 import { CameraController } from './camera';
 import { DeskContext, TagTracker, type DeskApi, type Target } from './interaction';
@@ -256,6 +256,22 @@ function Scene({ data, night, paused, reducedMotion, onController, onEntered }: 
   const [cam] = useState(() => new CameraController(camera, invalidate, () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false));
 
   useEffect(() => onController(cam), [cam, onController]);
+
+  // Each frame: move the camera first (so the frame shows where it is now), then decide about shadows. The room
+  // is static, so while only the camera moves the shadow maps from the last frame are still right; redrawing them
+  // (window light + lamp, 1024² each) on every frame of a flight was the heaviest part of it. They redraw on any
+  // other frame (hover lifts, lamp, data), on the frame a flight lands, and when something marks them dirty.
+  const shadowsDirty = useRef(true);
+  useLayoutEffect(() => {
+    const { shadowMap } = get().gl;
+    shadowMap.autoUpdate = false;
+    shadowMap.needsUpdate = true;
+  }, [get]);
+  useFrame((state) => {
+    cam.update(performance.now());
+    state.gl.shadowMap.needsUpdate = !cam.flying || shadowsDirty.current;
+    shadowsDirty.current = false;
+  });
   // Development builds only: lets devtools (and screenshot scripts) inspect and move the camera.
   useEffect(() => {
     if (import.meta.env.DEV) (window as unknown as { __desk?: object }).__desk = { cam, camera, get };
@@ -267,6 +283,7 @@ function Scene({ data, night, paused, reducedMotion, onController, onEntered }: 
   // Theme: dusk with the lamp off, or night with the lamp on.
   useEffect(() => {
     room.setNight(night);
+    shadowsDirty.current = true; // the lamp's light (and its shadow) comes and goes with the theme
     const s = get();
     s.scene.background = color(night ? '#07080C' : '#120F0D');
     s.gl.toneMappingExposure = night ? 1.12 : 1.05;

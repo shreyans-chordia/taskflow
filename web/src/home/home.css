@@ -4,21 +4,24 @@
 .home-bar { position: absolute; z-index: 7; left: 16px; right: 16px; top: 14px; display: flex; justify-content: space-between; align-items: center; gap: 10px; pointer-events: none }
 .home-bar > * { pointer-events: auto }
 
-.panel { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: 16px; overflow-y: auto; background: rgba(0, 0, 0, .12); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); animation: panel-veil 520ms var(--ease-out) both }
+.panel { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: 16px; overflow-y: auto }
+/* The veil only dims, and only its opacity animates: animating a blur over the 3D room (still finishing its
+   camera flight underneath) re-blurred the whole screen every frame and made the flight stutter. */
+.panel::before { content: ""; position: fixed; inset: 0; z-index: -1; background: rgba(0, 0, 0, .16); animation: panel-veil 420ms var(--ease-out) both }
 .panel-card { position: relative; width: min(940px, 100%); max-height: calc(100dvh - 32px); overflow-y: auto; overscroll-behavior: contain; padding: 28px 32px; border-radius: 18px; display: flex; flex-direction: column; gap: 16px; animation: panel-in 620ms var(--ease-out) both }
 /* The card still scrolls (wheel, touchpad, keys, touch) but shows no scrollbar: on Windows the bar sits inside the
    card and squares off its right edge, breaking the rounded glass shape. */
 .panel-card { scrollbar-width: none }
 .panel-card::-webkit-scrollbar { display: none }
-.panel.closing { animation: panel-veil-out 260ms var(--ease-in) forwards }
+.panel.closing::before { animation: panel-veil-out 260ms var(--ease-in) forwards }
 .panel.closing .panel-card { animation: panel-out 260ms var(--ease-in) forwards }
 .panel-card:has(.tv[data-view="calendar"]) { width: min(1200px, 100%) }
 .panel-close { position: absolute; right: 14px; top: 14px; width: 40px; height: 40px; display: grid; place-items: center; border: 0; border-radius: 50%; background: transparent; color: var(--g-ink); cursor: pointer }
 .panel-close:hover { background: var(--g-field) }
 .panel-close svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round }
 .panel .title:focus { outline: none }
-@keyframes panel-veil { from { background-color: rgba(0, 0, 0, 0); -webkit-backdrop-filter: blur(0); backdrop-filter: blur(0) } }
-@keyframes panel-veil-out { to { background-color: rgba(0, 0, 0, 0); -webkit-backdrop-filter: blur(0); backdrop-filter: blur(0) } }
+@keyframes panel-veil { from { opacity: 0 } }
+@keyframes panel-veil-out { to { opacity: 0 } }
 @keyframes panel-in { from { opacity: 0; transform: scale(.94) } }
 @keyframes panel-out { to { opacity: 0; transform: scale(.92) } }
 

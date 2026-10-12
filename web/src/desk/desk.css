@@ -23,4 +23,4 @@
 
 /* Light quality (no graphics card): solid paper instead of live frosted glass, which the CPU cannot blur fast enough. */
 :root[data-quality="light"] .glass { background: var(--g-solid); -webkit-backdrop-filter: none; backdrop-filter: none }
-:root[data-quality="light"] .panel { -webkit-backdrop-filter: none; backdrop-filter: none; animation: none; background: rgba(0, 0, 0, .28) }
+:root[data-quality="light"] .panel::before { animation: none; background: rgba(0, 0, 0, .28) }
