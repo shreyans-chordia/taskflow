@@ -1,15 +1,11 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { ApiError } from '../api/client';
-import { categoriesApi, prioritiesApi, tasksApi } from '../api/endpoints';
-import type { Priority, Task } from '../api/types';
 import { useAuth } from '../auth/AuthProvider';
-import { Logo, Ring } from '../components/Ring';
+import { Logo } from '../components/Ring';
+import { TaskViews } from '../tasks/TaskViews';
 import './workbench.css';
 
 /**
- * The 2D task list page. It is the fallback when a browser cannot draw the 3D desk, and the same
- * <TaskList> is what the desk's panel shows when you click the corkboard.
+ * The 2D home page: the fallback when a browser cannot draw the 3D desk. It holds the same task screens
+ * (list, task, edit) that the desk's panel shows.
  */
 export function Workbench({ onToggleTheme }: { onToggleTheme: () => void }) {
   const { user, logout } = useAuth();
@@ -33,156 +29,8 @@ export function Workbench({ onToggleTheme }: { onToggleTheme: () => void }) {
         </div>
       </header>
       <main className="wb-card glass" aria-labelledby="wb-title">
-        <TaskList titleId="wb-title" />
+        <TaskViews titleId="wb-title" initial={{ type: 'list' }} />
       </main>
     </div>
-  );
-}
-
-export interface TaskListProps {
-  titleId: string;
-  eyebrow?: string;
-  heading?: string;
-  /** Show only tasks in this category (a tray on the organizer). */
-  categoryId?: string;
-  /** Put the cursor in the new-task field (the "Add task" key). */
-  focusAdd?: boolean;
-  /** Mark one task (the note that was clicked). */
-  highlightId?: string;
-}
-
-/** Add, tick and delete tasks on the real API (TASK-1, TASK-2, TASK-4, TASK-5, PR-1). */
-export function TaskList({ titleId, eyebrow = 'Corkboard', heading = 'Your tasks', categoryId, focusAdd, highlightId }: TaskListProps) {
-  const qc = useQueryClient();
-  const tasks = useQuery({ queryKey: ['tasks'], queryFn: () => tasksApi.list() });
-  const priorities = useQuery({ queryKey: ['priorities'], queryFn: prioritiesApi.list });
-  const categories = useQuery({ queryKey: ['categories'], queryFn: categoriesApi.list });
-  const [title, setTitle] = useState('');
-  const [priorityId, setPriorityId] = useState('');
-  const [error, setError] = useState('');
-  const addRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (focusAdd) addRef.current?.focus();
-  }, [focusAdd]);
-
-  const invalidate = () => qc.invalidateQueries({ queryKey: ['tasks'] });
-  const create = useMutation({ mutationFn: tasksApi.create, onSuccess: invalidate });
-  // Ticking a task updates the list at once (optimistic) and puts it back if the server refuses.
-  const update = useMutation({
-    mutationFn: ({ id, done }: { id: string; done: boolean }) => tasksApi.update(id, { done }),
-    onMutate: async ({ id, done }) => {
-      await qc.cancelQueries({ queryKey: ['tasks'] });
-      const previous = qc.getQueryData<Task[]>(['tasks']);
-      qc.setQueryData<Task[]>(['tasks'], (list) => list?.map((t) => (t.id === id ? { ...t, done } : t)));
-      return { previous };
-    },
-    onError: (_err, _vars, ctx) => {
-      if (ctx?.previous) qc.setQueryData(['tasks'], ctx.previous);
-      setError('Could not update the task. Try again.');
-    },
-    onSettled: invalidate,
-  });
-  const remove = useMutation({ mutationFn: tasksApi.remove, onSuccess: invalidate });
-
-  const levels = priorities.data ?? [];
-  const byId = new Map(levels.map((p) => [p.id, p]));
-  const catName = new Map((categories.data ?? []).map((c) => [c.id, c.name]));
-  const shown = (tasks.data ?? []).filter((t) => !categoryId || t.categoryIds.includes(categoryId));
-
-  async function add(e: FormEvent) {
-    e.preventDefault();
-    if (!title.trim()) {
-      setError('Give the task a title.');
-      return;
-    }
-    setError('');
-    try {
-      await create.mutateAsync({ title: title.trim(), ...(priorityId ? { priorityId } : {}), ...(categoryId ? { categoryIds: [categoryId] } : {}) });
-      setTitle('');
-    } catch (err) {
-      setError(err instanceof ApiError ? Object.values(err.fields)[0] ?? err.message : 'Could not save the task.');
-    }
-  }
-
-  return (
-    <>
-      <div className="eyebrow">{eyebrow}</div>
-      <h1 id={titleId} className="title" tabIndex={-1}>
-        {heading}
-      </h1>
-      <form className="wb-add" onSubmit={add} noValidate>
-        <div className="field" style={{ flex: 1 }}>
-          <label className="label" htmlFor={`${titleId}-new`}>New task</label>
-          <div className="field-input">
-            <input ref={addRef} id={`${titleId}-new`} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Submit Lab 7 record" aria-invalid={error ? true : undefined} aria-describedby={error ? `${titleId}-err` : undefined} />
-          </div>
-        </div>
-        <div className="field">
-          <label className="label" htmlFor={`${titleId}-pr`}>Priority</label>
-          <select id={`${titleId}-pr`} className="wb-select" value={priorityId} onChange={(e) => setPriorityId(e.target.value)}>
-            <option value="">Default</option>
-            {levels.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
-        </div>
-        <button type="submit" className="btn btn-primary" disabled={create.isPending}>
-          Pin it
-        </button>
-      </form>
-      {error && <p className="field-error" id={`${titleId}-err`} role="alert">{error}</p>}
-
-      {tasks.isPending ? (
-        <p className="wb-note">Loading your tasks…</p>
-      ) : tasks.isError ? (
-        <p className="wb-note" role="alert">Could not load your tasks. {tasks.error instanceof ApiError ? tasks.error.message : ''}</p>
-      ) : shown.length === 0 ? (
-        <p className="wb-empty">{categoryId ? 'Nothing in this tray yet.' : 'Nothing pinned yet. Add your first task above.'}</p>
-      ) : (
-        <ul className="wb-list" aria-label="Tasks">
-          {shown.map((t) => (
-            <TaskRow key={t.id} task={t} highlight={t.id === highlightId} level={byId.get(t.priorityId)} levels={levels.length} categories={t.categoryIds.map((c) => catName.get(c) ?? '').filter(Boolean)}
-              onToggle={(done) => update.mutateAsync({ id: t.id, done }).catch(() => undefined)} onDelete={() => remove.mutate(t.id)} />
-          ))}
-        </ul>
-      )}
-    </>
-  );
-}
-
-function TaskRow({ task, highlight, level, levels, categories, onToggle, onDelete }: { task: Task; highlight?: boolean; level?: Priority; levels: number; categories: string[]; onToggle: (done: boolean) => Promise<unknown>; onDelete: () => void }) {
-  // While a save is in flight the box shows what was clicked, set in the same event as the click
-  // (React Query's cache update lands a tick later, which made the box flicker back). When the save
-  // settles the box follows the server data again, which is the rolled-back value if it failed.
-  const [pending, setPending] = useState<boolean | null>(null);
-  const done = pending ?? task.done;
-  return (
-    <li className={`wb-row${done ? ' done' : ''}${highlight ? ' picked' : ''}`} aria-current={highlight ? 'true' : undefined}>
-      <input
-        type="checkbox"
-        checked={done}
-        onChange={(e) => {
-          setPending(e.target.checked);
-          void onToggle(e.target.checked).finally(() => setPending(null));
-        }}
-        aria-label={`Mark ${task.title} ${done ? 'not done' : 'done'}`}
-      />
-      {level && (
-        <span className="wb-pill" style={{ ['--pc' as string]: level.color }}>
-          <Ring filled={levels - level.order} segments={levels} color={level.color} size={16} />
-          {level.name}
-        </span>
-      )}
-      <span className="wb-text">
-        <span className="wb-title">{task.title}</span>
-        {categories.length > 0 && <span className="wb-meta">{categories.join(' · ')}</span>}
-      </span>
-      <button type="button" className="btn btn-ghost wb-del" onClick={onDelete} aria-label={`Delete ${task.title}`}>
-        Delete
-      </button>
-    </li>
   );
 }

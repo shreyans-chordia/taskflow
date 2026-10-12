@@ -4,8 +4,9 @@ A personal task manager whose home screen is a 3D desk: tasks are sticky notes o
 calendar, categories are trays on a shelf, and a Pomodoro clock ticks on the desk.
 
 > Status: the secure REST API (`server/`) and the React front end (`web/`) are connected, and the home screen is the
-> live 3D desk (React Three Fiber), drawn from your real tasks. Clicking an object flies the camera to it and opens your
-> task list; the dedicated panels (calendar, search, weekly review, Pomodoro) are being ported from the prototype next.
+> live 3D desk (React Three Fiber), drawn from your real tasks. Clicking an object flies the camera to it and opens a
+> panel: open a note to see the task and its checklist, edit every field (categories, priority, deadline and time), or
+> add a task with a live sticky-note preview. Calendar, search, weekly review and Pomodoro panels come next.
 > Browsers without WebGL get the same task list as a plain 2D page.
 
 ## Stack

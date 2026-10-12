@@ -1,5 +1,6 @@
 import type { Category, Priority, Task } from '../api/types';
 import type { IconKind } from './three/paint';
+import { addDays, deadlineParts, localDay } from '../tasks/format';
 import { mixHex } from './three/paint';
 
 /**
@@ -57,13 +58,7 @@ const DEFAULT_LOOK: Record<string, { note: string; icon: IconKind }> = {
   others: { note: '#F6DC8F', icon: 'dots' },
 };
 
-const pad = (n: number) => String(n).padStart(2, '0');
-export const localDay = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-export const addDays = (day: string, n: number) => {
-  const d = new Date(`${day}T00:00`);
-  d.setDate(d.getDate() + n);
-  return localDay(d);
-};
+export { addDays, localDay } from '../tasks/format';
 
 export function toDeskData(tasks: Task[], categories: Category[], priorities: Priority[], now = new Date()): DeskData {
   const cats: DeskCategory[] = [...categories]
@@ -82,17 +77,8 @@ export function toDeskData(tasks: Task[], categories: Category[], priorities: Pr
     today: localDay(now),
     categories: cats,
     tasks: tasks.map((t) => {
-      let due: string | null = null, time: string | null = null;
-      if (t.deadline) {
-        if (t.hasTime) {
-          const d = new Date(t.deadline);
-          due = localDay(d);
-          time = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
-        } else {
-          // A date without a time is stored as midnight UTC; its calendar day is the date part.
-          due = t.deadline.slice(0, 10);
-        }
-      }
+      const parts = deadlineParts(t);
+      const due = parts.date || null, time = parts.time || null;
       const category = t.categoryIds.map((id) => byCat.get(id)).find(Boolean) ?? null;
       return {
         id: t.id,

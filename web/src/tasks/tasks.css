@@ -1,0 +1,117 @@
+/* Task screens: list, task detail, edit form. Shared by the desk panel and the 2D page. */
+
+/* list */
+.wb-add { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap }
+.wb-select { min-height: 46px; padding: 0 10px; border: 0; border-bottom: 1.5px solid var(--g-ink); border-radius: 6px 6px 0 0; background: var(--g-field); color: var(--g-ink) }
+.wb-note, .wb-empty { margin: 8px 0; color: var(--g-sub) }
+.wb-empty { font: 700 28px/1.1 var(--f-script); color: var(--g-ink); text-align: center; padding: 24px 0 }
+.wb-list { list-style: none; margin: 0; padding: 0; border-top: 1.5px solid var(--g-ink) }
+.wb-row { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 8px 4px; border-bottom: 1px solid var(--g-line) }
+.wb-row input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--pen) }
+.wb-pill { display: inline-flex; align-items: center; gap: 6px; width: 104px; flex: none; padding: 4px 8px; border-radius: 99px; font: 600 12px/1.2 var(--f-ui); background: color-mix(in srgb, var(--pc) 28%, var(--mixbase)) }
+.wb-text { flex: 1; min-width: 0; display: flex; flex-direction: column }
+.wb-title { font-weight: 600 }
+.wb-meta { font-size: 12.5px; color: var(--g-sub) }
+.wb-row.done .wb-title { color: var(--g-sub); text-decoration: line-through wavy; text-decoration-thickness: 1.5px }
+.wb-del { min-height: 36px; padding: 0 10px; font-size: 13px }
+.wb-row.picked { background: color-mix(in srgb, var(--pen) 12%, transparent); border-radius: 8px }
+.wb-open { appearance: none; border: 0; background: none; padding: 0; text-align: left; cursor: pointer; color: inherit; font: inherit }
+.wb-open:hover .wb-title { color: var(--pen); text-decoration: underline; text-underline-offset: 3px }
+.wb-confirm { background: color-mix(in srgb, var(--coral) 14%, transparent); border-radius: 8px; padding-left: 10px }
+.btn-danger { background: var(--coral); border-color: var(--coral); color: #fff }
+.btn-danger:hover:not(:disabled) { background: color-mix(in srgb, var(--coral) 88%, black) }
+
+/* shared bits */
+.tv { display: flex; flex-direction: column; gap: 16px }
+.tv-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; padding-right: 44px }
+.tv-back { align-self: flex-start; font-size: 14px; margin-bottom: -4px }
+.tv-ok { margin: 0; padding: 10px 12px; border-radius: 10px; box-shadow: inset 0 0 0 1.5px var(--mint); background: color-mix(in srgb, var(--mint) 14%, transparent); font-weight: 500 }
+.tv-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center }
+.tv-grow { flex: 1 }
+.tv-ink { border-color: var(--g-ink); color: var(--g-ink) }
+.stamp { display: inline-block; align-self: center; padding: 2px 7px; border: 1.5px solid currentColor; font: 600 12px/1.2 var(--f-label); letter-spacing: .14em; text-transform: uppercase; transform: rotate(-4deg); white-space: nowrap; color: var(--g-ink); background: var(--g-field) }
+.stamp.sm { font-size: 11px }
+
+/* detail and form: the sticky note on the left, the content on the right */
+.tv-split { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 32px; align-items: start }
+.tv-note { position: sticky; top: 8px; display: grid; gap: 18px; justify-items: start; padding-top: 34px }
+.tv-main { display: flex; flex-direction: column; gap: 16px; min-width: 0; padding-right: 36px }
+.tv-title { font-size: 46px; overflow-wrap: anywhere }
+/* Headings take focus on each screen change for screen readers; the ring would only distract sighted users. */
+.tv .title:focus { outline: none }
+.tv-livepill { padding: 9px 16px; border-radius: 99px; font: 500 11px/1 var(--f-mono); letter-spacing: .06em; text-transform: uppercase; background: var(--g-field); box-shadow: inset 0 0 0 1px var(--g-line) }
+
+/* the paper note, as on the corkboard */
+.pn { position: relative; display: flex; flex-direction: column; width: 100%; min-height: 230px; background: color-mix(in srgb, var(--pc) 24%, #FDF9F0); border: 1px solid rgba(43, 46, 51, .2); border-radius: 2px; color: #2B2E33; transform: rotate(-3deg);
+  /* drop-shadow, not box-shadow: Chrome's software compositor drops parts of the panel when a rotated element
+     carries a blurred box-shadow inside a scrolling card. drop-shadow looks the same and draws reliably. */
+  filter: drop-shadow(0 12px 12px rgba(0, 0, 0, .32)) }
+.pn-tape { display: block; height: 14px; background: var(--pc) }
+.pn-body { flex: 1; display: flex; flex-direction: column; gap: 6px; padding: 12px 16px 14px }
+.pn-title { font: 700 36px/1.02 var(--f-script); overflow-wrap: anywhere }
+.pn.done .pn-title { opacity: .65; text-decoration: line-through; text-decoration-thickness: 2px }
+.pn-line { font: 500 14px/1.35 var(--f-ui) }
+.pn-meta { margin-top: auto; display: flex; justify-content: space-between; gap: 8px; font: 600 13px/1 var(--f-ui) }
+.pn-w { display: flex; align-items: center; gap: 6px }
+.pn .stamp { position: absolute; right: 10px; top: 4px; color: #2B2E33; background: #FDF9F0 }
+
+/* detail */
+.tv-facts { display: flex; flex-wrap: wrap; gap: 10px; align-items: center }
+.tv-pill { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px 5px 7px; border-radius: 99px; font: 600 13px/1 var(--f-ui); background: color-mix(in srgb, var(--pc) 28%, var(--mixbase)) }
+.tv-cat { display: inline-flex; align-items: center; gap: 7px; padding: 5px 11px; border-radius: 99px; font: 600 13px/1 var(--f-ui); box-shadow: inset 0 0 0 1.5px var(--g-ink); background: var(--g-field) }
+.tv-cat i, .tv-chip i { width: 10px; height: 10px; border-radius: 50%; flex: none; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .15) }
+.tv-due { font: 500 14px/1 var(--f-ui) }
+.tv-late { font: 700 14px/1 var(--f-ui); color: var(--danger-ink) }
+.tv-desc { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere }
+.tv-done { display: flex; align-items: center; gap: 10px; min-height: 44px; font: 600 15px/1.3 var(--f-ui); cursor: pointer }
+.tv-done input, .tv-subs input { width: 20px; height: 20px; accent-color: var(--pen) }
+.tv-check { display: flex; flex-direction: column; gap: 6px }
+.tv-check-head { display: flex; align-items: center; gap: 10px; min-height: 26px }
+.tv-subs { list-style: none; margin: 0; padding: 0; border-top: 1.5px solid var(--g-ink) }
+.tv-subs li { display: flex; align-items: center; gap: 8px; min-height: 46px; border-bottom: 1px solid var(--g-line) }
+.tv-subs label { flex: 1; display: flex; align-items: center; gap: 10px; cursor: pointer; overflow-wrap: anywhere }
+.tv-subs li.done span { color: var(--g-sub); text-decoration: line-through }
+.tv-x { width: 40px; height: 40px; flex: none; display: grid; place-items: center; border: 0; border-radius: 8px; background: transparent; color: var(--g-sub); cursor: pointer }
+.tv-x:hover { color: var(--danger-ink); background: var(--g-field) }
+.tv-x svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round }
+.tv-subadd { display: flex; gap: 10px; align-items: flex-end; margin-top: 6px }
+.tv-subadd .field { flex: 1 }
+.tv-confirm { display: grid; gap: 10px; padding: 14px; border-radius: 12px; box-shadow: inset 0 0 0 1.5px var(--coral) }
+
+/* form */
+.tv-form { display: flex; flex-direction: column; gap: 18px }
+.tv-textarea { min-height: 76px; padding: 10px 12px; border: 0; border-bottom: 1.5px solid var(--g-ink); border-radius: 6px 6px 0 0; background: var(--g-field); color: var(--g-ink); font: inherit; resize: vertical }
+.tv-textarea:focus { outline: none; border-bottom: 2px solid var(--pen); box-shadow: 0 2px 0 var(--pen) }
+.tv-chips { display: flex; flex-wrap: wrap; gap: 8px }
+.tv-chip { display: inline-flex; align-items: center; gap: 7px; min-height: 42px; padding: 0 14px; border: 1.5px solid var(--g-ink); border-radius: 99px; background: var(--g-field); color: var(--g-ink); font: 600 14px/1 var(--f-ui); cursor: pointer }
+.tv-chip[aria-pressed="true"] { background: var(--pen); border-color: var(--pen); color: var(--on-pen) }
+.tv-levels { display: flex; flex-wrap: wrap; gap: 10px }
+.tv-level { flex: 1; min-width: 120px; display: flex; align-items: center; gap: 8px; min-height: 56px; padding: 0 14px; border: 2px solid transparent; border-radius: 10px; background: color-mix(in srgb, var(--pc) 28%, var(--mixbase)); color: var(--g-ink); font: 600 14px/1 var(--f-ui); cursor: pointer }
+.tv-level[aria-checked="true"] { border-color: var(--pen); box-shadow: 0 0 0 2px var(--g-solid), 0 0 0 4px var(--pen) }
+.tv-new { border: 1.5px dashed var(--pen); background: transparent; color: var(--pen); justify-content: center }
+.tv-level.tv-new { border-width: 2px; flex: 0 1 auto }
+.tv-two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px }
+.tv-two input:disabled { opacity: .5 }
+.tv-clear { align-self: flex-start; font-size: 13px; margin-top: -10px }
+.tv-foot { display: flex; gap: 12px; padding-top: 16px; border-top: 1px solid var(--g-line) }
+.tv-quick { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 10px; padding: 12px; border-radius: 12px; background: var(--g-cell); box-shadow: inset 0 0 0 1px var(--g-line) }
+.tv-quick-name { flex: 1 1 160px }
+.tv-quick .btn { min-height: 40px }
+.tv-swatches { display: flex; flex-wrap: wrap; gap: 6px }
+.tv-swatch { width: 26px; height: 26px; border: 0; border-radius: 50%; cursor: pointer; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .2) }
+.tv-swatch[aria-checked="true"] { box-shadow: 0 0 0 2px var(--g-solid), 0 0 0 4px var(--g-ink) }
+.tv-quick-err { flex-basis: 100% }
+
+@media (max-width: 760px) {
+  .tv-split { grid-template-columns: minmax(0, 1fr); gap: 18px }
+  .tv-note { position: static; padding-top: 0; justify-items: center }
+  .tv-note .pn { width: min(280px, 85%); min-height: 190px }
+  .tv-note .pn-title { font-size: 30px }
+  .tv-main { padding-right: 0 }
+  .tv-title { font-size: 38px }
+  .tv-livepill { display: none }
+}
+@media (max-width: 480px) {
+  .tv-two { grid-template-columns: minmax(0, 1fr) }
+  .tv-level { min-width: calc(50% - 5px) }
+}
