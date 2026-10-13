@@ -1,0 +1,70 @@
+/* The task form's date and time pickers, in the colour picker's style (see components/color.css for .cpick, .cp-*). */
+
+/* the field-like button that opens a picker */
+.dt-btn { width: 100%; min-width: 0; min-height: 46px; display: flex; align-items: center; gap: 10px; padding: 0 10px 0 6px; border: 0; border-bottom: 1.5px solid var(--g-ink); border-radius: 6px 6px 0 0; background: var(--g-field); color: var(--g-ink); font: 500 15px/1 var(--f-ui); text-align: left; cursor: pointer }
+.dt-btn:hover:not(:disabled) { background: color-mix(in srgb, var(--pen) 8%, var(--g-field)) }
+.dt-btn:focus-visible, .dt-btn[aria-expanded="true"] { outline: none; border-bottom: 2px solid var(--pen); box-shadow: 0 2px 0 var(--pen), 0 8px 18px -8px var(--pen-glow) }
+.dt-btn:disabled { opacity: .5; cursor: default }
+/* the icon sits in a round chip, like the colour swatch it stands beside in the room */
+.dt-ic { width: 32px; height: 32px; flex: none; display: grid; place-items: center; border-radius: 50%; background: var(--pen); color: var(--on-pen); box-shadow: 0 0 0 2px var(--g-solid), 0 0 0 3.5px var(--g-ink), inset 0 2px 3px rgba(255, 255, 255, .25) }
+.dt-btn:disabled .dt-ic { background: var(--g-sub) }
+.dt-ic svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round }
+.dt-val { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--f-mono); font-size: 14px }
+.dt-empty { font-family: var(--f-ui); font-size: 15px; color: var(--g-sub) }
+.dt-chev { width: 18px; height: 18px; flex: none; fill: none; stroke: var(--g-sub); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; transition: transform 160ms ease-out }
+.dt-btn[aria-expanded="true"] .dt-chev { transform: rotate(180deg) }
+
+/* shared bits of both popovers */
+.dpick, .tpick { width: 304px }
+.dt-typed { text-transform: none }
+.dt-typed::placeholder { color: var(--g-sub); opacity: .75 }
+.dt-typed.bad { border-bottom-color: var(--danger-line) }
+.dt-err { margin: -4px 0 0; font: 500 12.5px/1.35 var(--f-ui); color: var(--danger-ink) }
+.dt-clear { align-self: flex-start; font-size: 13px }
+
+/* date: the preview is a tear-off calendar page */
+.dp-prev { width: 44px; height: 44px; flex: none; display: flex; flex-direction: column; overflow: hidden; border-radius: 10px; background: #FDF9F0; box-shadow: inset 0 0 0 1.5px var(--g-ink), 0 6px 14px rgba(0, 0, 0, .2) }
+.dp-prev-m { height: 15px; display: grid; place-items: center; background: var(--pen); color: #FDF9F0; font: 600 9.5px/1 var(--f-label); letter-spacing: .14em; text-transform: uppercase }
+.dp-prev-d { flex: 1; display: grid; place-items: center; color: #2B2E33; font: 500 19px/1 var(--f-mono) }
+.dp-pres { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px }
+.dp-pre { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 3px; padding: 7px 9px; border: 1.5px solid var(--g-line); border-radius: 10px; background: var(--g-field); color: var(--g-ink); font: 600 12.5px/1.1 var(--f-ui); text-align: left; cursor: pointer; transition: transform 120ms ease-out }
+.dp-pre:hover { border-color: var(--g-ink); transform: translateY(-1px) }
+.dp-pre-d { font: 500 11px/1 var(--f-mono); color: var(--g-sub) }
+.dp-pre[aria-pressed="true"] { background: var(--pen); border-color: var(--pen); color: var(--on-pen) }
+.dp-pre[aria-pressed="true"] .dp-pre-d { color: inherit; opacity: .8 }
+.dp-pre:focus-visible, .tp-pre:focus-visible, .dp-day:focus-visible { outline: 2px solid var(--pen); outline-offset: 2px }
+.dp-nav { display: flex; align-items: center; gap: 2px; margin: 2px 0 -6px }
+.dp-nav .cp-lbl { flex: 1; margin: 0 }
+.dp-nav .cp-x { width: 32px; height: 32px }
+.dp-grid { width: calc(100% + 4px); margin: 0 -2px; table-layout: fixed; border-collapse: separate; border-spacing: 2px }
+.dp-grid th { padding: 0 0 2px; font: 600 11px/1 var(--f-label); letter-spacing: .1em; text-transform: uppercase; color: var(--g-sub) }
+.dp-grid td { padding: 0; text-align: center }
+/* days are round, like the colour presets */
+.dp-day { position: relative; width: 34px; height: 34px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--g-ink); font: 500 13px/1 var(--f-mono); cursor: pointer; transition: transform 120ms ease-out, background 120ms ease-out }
+.dp-day:hover { background: var(--g-field); transform: scale(1.08) }
+.dp-day.out { color: var(--g-sub); opacity: .55 }
+.dp-day.today { box-shadow: inset 0 0 0 1.5px var(--g-ink) }
+.dp-day[aria-pressed="true"] { background: var(--pen); color: var(--on-pen); box-shadow: 0 0 0 2px var(--g-solid), 0 0 0 3.5px var(--g-ink) }
+
+/* time: the preview is a small clock */
+.tp-prev { width: 44px; height: 44px; flex: none; filter: drop-shadow(0 6px 10px rgba(0, 0, 0, .2)) }
+.tp-face { fill: #FDF9F0; stroke: var(--g-ink); stroke-width: 1.5 }
+.tp-tick { stroke: #2B2E33; stroke-width: 1.2; stroke-linecap: round; opacity: .6 }
+.tp-hand { stroke-linecap: round }
+.tp-hand.h { stroke: #2B2E33; stroke-width: 2.6 }
+.tp-hand.m { stroke: var(--coral); stroke-width: 1.8 }
+.tp-pin { fill: #2B2E33 }
+.tp-pres { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px }
+.tp-pre { min-height: 34px; padding: 0 4px; border: 1.5px solid var(--g-line); border-radius: 99px; background: var(--g-field); color: var(--g-ink); font: 600 12px/1 var(--f-ui); white-space: nowrap; cursor: pointer; transition: transform 120ms ease-out }
+.tp-pre:hover { border-color: var(--g-ink); transform: translateY(-1px) }
+.tp-pre[aria-pressed="true"] { background: var(--pen); border-color: var(--pen); color: var(--on-pen) }
+.tp-sl { display: grid; grid-template-columns: 52px minmax(0, 1fr) 26px; align-items: center; gap: 10px }
+.tp-sl-l { font: 600 12px/1 var(--f-label); letter-spacing: .12em; text-transform: uppercase; color: var(--g-sub) }
+.tp-sl-v { font: 500 14px/1 var(--f-mono); color: var(--g-ink); text-align: right }
+/* the hue slider's shape, filled with pen blue up to the value */
+.tp-range { -webkit-appearance: none; appearance: none; width: 100%; height: 14px; margin: 4px 0; border-radius: 99px; background: linear-gradient(to right, var(--pen) var(--fill), var(--ring-track) var(--fill)); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .14); cursor: pointer }
+.tp-range::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%; background: var(--pen); box-shadow: 0 0 0 3px #fff, 0 1px 6px rgba(0, 0, 0, .4) }
+.tp-range::-moz-range-thumb { width: 20px; height: 20px; border: 0; border-radius: 50%; background: var(--pen); box-shadow: 0 0 0 3px #fff, 0 1px 6px rgba(0, 0, 0, .4) }
+.tp-range:focus-visible { outline: 2px solid var(--pen); outline-offset: 5px }
+
+@media (prefers-reduced-motion: reduce) { .dt-chev, .dp-pre, .tp-pre, .dp-day { transition: none } }

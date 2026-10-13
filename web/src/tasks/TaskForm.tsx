@@ -2,6 +2,7 @@ import { useId, useRef, useState, type CSSProperties, type FormEvent } from 'rea
 import { ApiError } from '../api/client';
 import { Ring } from '../components/Ring';
 import { deadlineParts, deadlinePayload, dueSentence, isOverdue, rankLevels } from './format';
+import { DateButton, TimeButton } from './DeadlinePickers';
 import { PaperNote } from './PaperNote';
 import { QuickAdd } from './QuickAdd';
 import { useTaskActions, useTaskData } from './useTaskActions';
@@ -186,16 +187,12 @@ export function TaskForm({ id, titleId, categoryId, date, onSaved, onCancel }: {
 
           <div className="tv-two">
             <div className={`field${errors.deadline ? ' bad' : ''}`}>
-              <label className="label" htmlFor={`${uid}-dl`}>Deadline · optional</label>
-              <div className="field-input">
-                <input id={`${uid}-dl`} type="date" value={draft.date} onChange={(e) => { set('date', e.target.value); if (!e.target.value) set('time', ''); }} />
-              </div>
+              <label className="label" id={`${uid}-dll`} htmlFor={`${uid}-dl`}>Deadline · optional</label>
+              <DateButton id={`${uid}-dl`} labelId={`${uid}-dll`} value={draft.date} onChange={(d) => { set('date', d); if (!d) set('time', ''); }} />
             </div>
             <div className="field">
-              <label className="label" htmlFor={`${uid}-tm`}>Time · optional</label>
-              <div className="field-input">
-                <input id={`${uid}-tm`} type="time" value={draft.time} disabled={!draft.date} onChange={(e) => set('time', e.target.value)} />
-              </div>
+              <label className="label" id={`${uid}-tml`} htmlFor={`${uid}-tm`}>Time · optional</label>
+              <TimeButton id={`${uid}-tm`} labelId={`${uid}-tml`} value={draft.time} disabled={!draft.date} onChange={(t) => set('time', t)} />
             </div>
           </div>
           {errors.deadline && <span className="field-error">{errors.deadline}</span>}

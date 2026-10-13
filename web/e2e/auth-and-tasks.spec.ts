@@ -28,6 +28,24 @@ async function pinTask(scope: Page | Locator, title: string, priority?: string) 
   await expect(scope.getByRole('heading', { name: 'Your tasks' })).toBeVisible();
 }
 
+/**
+ * Sets the form's deadline through its pickers, by typing (they open in a popover over the page, outside the panel).
+ * `day` is "YYYY-MM-DD"; `time` anything the time picker reads, such as "18:30".
+ */
+async function setDeadline(page: Page, scope: Locator, day: string, time?: string) {
+  await scope.getByRole('button', { name: /^Deadline · optional/ }).click();
+  const dp = page.getByRole('dialog', { name: 'Choose a date' });
+  await dp.getByLabel('Type a date').fill(day);
+  await dp.getByLabel('Type a date').press('Enter');
+  await expect(dp).toBeHidden();
+  if (!time) return;
+  await scope.getByRole('button', { name: /^Time · optional/ }).click();
+  const tp = page.getByRole('dialog', { name: 'Choose a time' });
+  await tp.getByLabel('Type a time').fill(time);
+  await tp.getByLabel('Type a time').press('Enter');
+  await expect(tp).toBeHidden();
+}
+
 /** Closes the open panel; the camera flies back and the top bar is reachable again. */
 async function closePanel(page: Page) {
   await page.keyboard.press('Escape');
@@ -130,8 +148,8 @@ test('a task gets every detail, a checklist and an edit, survives a reload, then
   await panel.getByRole('button', { name: 'Study', exact: true }).click();
   await panel.getByRole('button', { name: 'Career', exact: true }).click();
   await panel.getByRole('radio', { name: 'High' }).click();
-  await panel.getByLabel('Deadline · optional').fill('2030-01-15');
-  await panel.getByLabel('Time · optional').fill('18:30');
+  await setDeadline(page, panel, '2030-01-15', '18:30');
+  await expect(panel.getByRole('button', { name: /^Deadline · optional/ })).toHaveText(/Tue 15 Jan 2030/);
   await panel.getByRole('button', { name: 'Pin to corkboard' }).click();
   await expect(panel.getByRole('status')).toContainText('Pinned “Write Lab 8 record”');
   await panel.getByRole('button', { name: 'Done' }).click();
@@ -211,7 +229,7 @@ test('the wall calendar shows a deadline and the search key finds the task (CAL-
   await panel.getByRole('button', { name: '+ Add task' }).click();
   await panel.getByLabel('Title').fill('Viva for Lab 9');
   await panel.getByLabel('Description · optional').fill('Component and deployment diagrams.');
-  await panel.getByLabel('Deadline · optional').fill(due);
+  await setDeadline(page, panel, due);
   await panel.getByRole('button', { name: 'Pin to corkboard' }).click();
   await expect(panel.getByRole('status')).toContainText('Pinned “Viva for Lab 9”');
   await closePanel(page);
