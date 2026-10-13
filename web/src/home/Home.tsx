@@ -5,6 +5,8 @@ import { AccountMenu } from '../components/AccountMenu';
 import type { Target } from '../desk/interaction';
 import { toDeskData } from '../desk/model';
 import { TaskViews, type TaskView } from '../tasks/TaskViews';
+import { PomodoroView } from '../timer/PomodoroView';
+import { TimerNotices } from '../timer/TimerNotices';
 import { Workbench } from '../workbench/Workbench';
 import './home.css';
 
@@ -56,6 +58,7 @@ function DeskHome({ night, onToggleTheme }: { night: boolean; onToggleTheme: () 
         </header>
       </div>
       {open && <Panel target={open} onClose={() => setOpen(null)} />}
+      <TimerNotices />
     </div>
   );
 }
@@ -65,6 +68,7 @@ function viewFor(target: Target): TaskView {
   const [kind, id] = target.key.split(':');
   if (kind === 'calendar') return { type: 'calendar' };
   if (kind === 'search') return { type: 'search' };
+  if (kind === 'notebook') return { type: 'review' };
   if (kind === 'categories') return { type: 'categories' };
   if (kind === 'note' && id) return { type: 'detail', id };
   if (kind === 'add') return { type: 'form' };
@@ -105,7 +109,7 @@ function Panel({ target, onClose }: { target: Target; onClose: () => void }) {
             <path d="M6 6L18 18M18 6L6 18" />
           </svg>
         </button>
-        <TaskViews titleId={titleId} initial={initial} onExit={close} />
+        {target.key === 'timer' ? <PomodoroView titleId={titleId} onExit={close} /> : <TaskViews titleId={titleId} initial={initial} onExit={close} />}
       </div>
     </div>
   );

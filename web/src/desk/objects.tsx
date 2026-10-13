@@ -7,6 +7,7 @@ import { boardOrder, dueLabel, isLate, openCountByCategory, weekSummary, type De
 import { add, B, C, color, disposeTree, group, Kit, repaint, std, type PaintedTexture, type V3 } from './three/kit';
 import { chip, hashSeed, icon, mixHex, roundRect, shade, squiggle, wrapText } from './three/paint';
 import { DESK_Y, LEGACY_FIT, ORGANIZER } from './three/room';
+import { lengthOf, mmss, pomodoro, type TimerState } from '../timer/pomodoro';
 
 /*
  * The interactive objects. Each one builds its meshes once with the same builder code as the prototype, then
@@ -489,27 +490,40 @@ export function Notebook({ kit, data }: ObjectProps) {
 
 const TIMER_TARGET: Target = { key: 'timer', label: 'Pomodoro clock', sub: 'Focus timer', focus: [0.2, 0.84, 0.16], view: [0.2, 1.0, 0.62], lift: 'y' };
 
+/** The clock face, as in the room: what is left as an arc (coral focus, green break), the time, and the state. */
+function paintClock(x: CanvasRenderingContext2D, w: number, h: number, t: TimerState) {
+  const frac = Math.ceil(t.left / 60) / (lengthOf(t) / 60);
+  x.fillStyle = '#0D0E10'; x.fillRect(0, 0, w, h);
+  x.lineWidth = 16; x.strokeStyle = '#26282C'; x.beginPath(); x.arc(w / 2, h / 2, 200, 0, 7); x.stroke();
+  if (frac > 0) {
+    x.strokeStyle = t.mode === 'work' ? '#FF6B4A' : '#5BCB7E'; x.lineCap = 'round';
+    x.beginPath(); x.arc(w / 2, h / 2, 200, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.min(frac, 0.9999)); x.stroke();
+  }
+  x.fillStyle = '#E8473A'; x.beginPath(); x.arc(w / 2, 150, 22, 0, 7); x.fill();
+  x.fillStyle = '#4FA35B'; x.fillRect(w / 2 - 3, 122, 6, 12);
+  x.fillStyle = '#F3EFE8'; x.font = '700 104px "JetBrains Mono", monospace'; x.textAlign = 'center'; x.textBaseline = 'middle';
+  x.fillText(mmss(t.left), w / 2, h / 2 + 10);
+  x.font = '600 26px Inter'; x.fillStyle = '#9AA0A6';
+  x.fillText(t.running ? (t.mode === 'work' ? 'FOCUS' : 'BREAK') : '▶  ❚❚  ↺', w / 2, h / 2 + 96);
+  x.textAlign = 'left'; x.textBaseline = 'alphabetic';
+}
+
+/** The desk clock follows the Pomodoro timer: it repaints when a second passes or the state changes, and only then. */
 export function PomodoroClock({ kit }: { kit: Kit }) {
+  const invalidate = useThree((s) => s.invalidate);
   const built = useBuilt(() => {
     const root = new THREE.Group();
     const ck = group(root, [0.2, DESK_Y + 0.085, 0.16]);
     add(ck, C(0.085, 0.085, 0.05, 48), kit.mat.woodDark, [0, 0, 0], [Math.PI / 2, 0, 0]);
-    // Idle face until the timer panel is ported: 25:00, the default focus length (POM-1).
-    const face = kit.ctex(512, 512, (x, w, h) => {
-      x.fillStyle = '#0D0E10'; x.fillRect(0, 0, w, h);
-      x.lineWidth = 16; x.strokeStyle = '#26282C'; x.beginPath(); x.arc(w / 2, h / 2, 200, 0, 7); x.stroke();
-      x.strokeStyle = '#FF6B4A'; x.lineCap = 'round'; x.beginPath(); x.arc(w / 2, h / 2, 200, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * 0.9999); x.stroke();
-      x.fillStyle = '#E8473A'; x.beginPath(); x.arc(w / 2, 150, 22, 0, 7); x.fill();
-      x.fillStyle = '#4FA35B'; x.fillRect(w / 2 - 3, 122, 6, 12);
-      x.fillStyle = '#F3EFE8'; x.font = '700 104px "JetBrains Mono", monospace'; x.textAlign = 'center'; x.textBaseline = 'middle';
-      x.fillText('25:00', w / 2, h / 2 + 10);
-      x.font = '600 26px Inter'; x.fillStyle = '#9AA0A6'; x.fillText('▶  ❚❚  ↺', w / 2, h / 2 + 96);
-      x.textAlign = 'left'; x.textBaseline = 'alphabetic';
-    });
+    const face = kit.ctex(512, 512, (x, w, h) => paintClock(x, w, h, pomodoro.get()));
     add(ck, new THREE.CircleGeometry(0.07, 48), new THREE.MeshBasicMaterial({ map: face, toneMapped: false }), [0, 0, 0.0255], [0, 0, 0], false, false);
     add(ck, B(0.08, 0.02, 0.05), kit.mat.woodDark, [0, -0.08, 0]);
-    return { root };
+    return { root, face };
   });
+  useEffect(() => {
+    invalidateAfter(invalidate, [built.face]);
+    return pomodoro.subscribe(() => invalidateAfter(invalidate, [built.face]));
+  }, [built, invalidate]);
   return (
     <Hit target={TIMER_TARGET}>
       <primitive object={built.root} dispose={null} />

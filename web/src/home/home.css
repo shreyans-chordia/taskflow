@@ -15,7 +15,7 @@
 .panel-card::-webkit-scrollbar { display: none }
 .panel.closing::before { animation: panel-veil-out 260ms var(--ease-in) forwards }
 .panel.closing .panel-card { animation: panel-out 260ms var(--ease-in) forwards }
-.panel-card:has(.tv[data-view="calendar"]) { width: min(1200px, 100%) }
+.panel-card:has(.tv[data-view="calendar"]), .panel-card:has(.tv[data-view="review"]) { width: min(1200px, 100%) }
 .panel-close { position: absolute; right: 14px; top: 14px; width: 40px; height: 40px; display: grid; place-items: center; border: 0; border-radius: 50%; background: transparent; color: var(--g-ink); cursor: pointer }
 .panel-close:hover { background: var(--g-field) }
 .panel-close svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round }

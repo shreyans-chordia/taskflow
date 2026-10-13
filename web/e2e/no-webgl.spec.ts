@@ -34,4 +34,10 @@ test('without WebGL the home screen is the 2D task list, fully usable', async ({
   await tabs.getByRole('button', { name: 'Search' }).click();
   await page.getByRole('searchbox', { name: 'Search' }).fill('2D');
   await expect(page.getByRole('list', { name: 'Matching tasks' })).toContainText('Works in 2D too');
+
+  // The weekly review and the Pomodoro timer are tabs too (TASK-4, POM-1).
+  await tabs.getByRole('button', { name: 'Weekly review' }).click();
+  await expect(page.getByRole('region', { name: 'Week summary' })).toBeVisible();
+  await tabs.getByRole('button', { name: 'Pomodoro' }).click();
+  await expect(page.getByRole('timer')).toHaveText('25:00');
 });

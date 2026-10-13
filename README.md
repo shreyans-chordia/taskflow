@@ -8,7 +8,8 @@ calendar, categories are trays on a shelf, and a Pomodoro clock ticks on the des
 > panel: open a note to see the task and its checklist, edit every field (categories, priority, deadline and time), or
 > add a task with a live sticky-note preview. The wall calendar opens a month of deadlines, and the search key finds
 > tasks by keyword, category, priority and status. The organizer renames, recolours, reorders, adds and deletes
-> categories and priority levels. Weekly review and Pomodoro panels come next.
+> categories and priority levels. The notebook opens a weekly review, and the desk clock is a Pomodoro focus timer
+> (not linked to tasks) that keeps running while you work.
 > Browsers without WebGL get the same screens as a plain 2D page.
 
 ## Stack

@@ -247,3 +247,63 @@ button.org-count:hover { color: var(--pen); text-decoration: underline; text-und
 @media (max-width: 480px) {
   .cork { grid-template-columns: minmax(0, 1fr); padding: 18px; gap: 18px }
 }
+
+/* weekly review: the notebook opened (the room's weekly progress panel) */
+.rv-cell { padding: 14px 18px; border-radius: 14px; background: var(--g-cell); box-shadow: inset 0 0 0 1px var(--g-line); min-width: 0 }
+.rv-h { margin: 0 }
+.rv-mono { font: 500 13px/1 var(--f-mono); color: var(--g-ink) }
+.rv-sum { display: flex; align-items: center; flex-wrap: wrap; gap: 14px 24px; padding: 14px 24px; min-height: 76px }
+.rv-big { font: 500 40px/1 var(--f-mono); color: var(--g-ink) }
+.rv-big small { font-size: 22px; color: var(--g-sub) }
+.rv-wl { width: 96px; font: 600 15px/1.25 var(--f-ui); color: var(--g-ink) }
+.rv-open { font: 500 14px/1.2 var(--f-ui); color: var(--g-sub) }
+.sb { display: flex; gap: 4px; flex: 1; min-width: 140px }
+.sb i { flex: 1; height: 10px; border-radius: 3px; background: var(--ring-track) }
+.sb i.f { background: var(--g-ink) }
+.sb.lg i { height: 20px; border-radius: 5px }
+.rv-days-sec { display: flex; flex-direction: column; gap: 12px }
+.rv-days-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px }
+.rv-leg { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; font: 500 13px/1 var(--f-ui); color: var(--g-sub) }
+.bm { display: inline-block; width: 22px; height: 14px; margin-right: 6px; border-radius: 4px; border: 1.5px solid var(--g-ink); background: color-mix(in srgb, var(--pc, var(--amber)) 34%, var(--mixbase)); vertical-align: middle }
+.bm.done { background: var(--g-ink) }
+.bm.od { border-style: dashed; border-width: 2px; background: transparent }
+.rv-days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 10px }
+.rv-day { display: flex; flex-direction: column; gap: 8px; min-width: 0; padding: 10px; border-radius: 10px; box-shadow: inset 0 0 0 1px var(--g-line) }
+.rv-day.now { background: var(--g-field); box-shadow: inset 0 0 0 2px var(--pen) }
+.rv-dh { display: flex; justify-content: space-between; align-items: center; gap: 4px }
+.rv-wd { font-size: 12px }
+.rv-tag { font: 500 11px/1 var(--f-mono); color: var(--pen) }
+.rv-df { font-size: 12px; color: var(--g-sub) }
+.blks { display: flex; flex-direction: column; gap: 6px; min-height: 96px }
+.blk { width: 100%; height: 28px; flex: none; display: flex; align-items: center; gap: 6px; padding: 0 8px; border-radius: 8px; border: 1.5px solid var(--g-ink); background: color-mix(in srgb, var(--pc, var(--amber)) 34%, var(--mixbase)); color: var(--g-ink); font: 600 12px/1 var(--f-ui); text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer }
+button.blk:hover { box-shadow: 0 0 0 2px var(--pen) }
+.blk.done { background: var(--g-ink); color: var(--on-pen) }
+.blk.od { border-style: dashed; border-width: 2px }
+.blk.none { border: 1.5px dashed var(--g-line); background: transparent; color: var(--g-sub); font-weight: 500; cursor: default }
+.blk svg { width: 14px; height: 14px; flex: none; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round }
+.rv-bottom { display: grid; grid-template-columns: minmax(0, 1fr) 420px; gap: 16px; align-items: start }
+.rv-openlist { display: flex; flex-direction: column; gap: 10px }
+.rv-brk { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; padding: 14px 20px 18px }
+.rv-bcol { display: flex; flex-direction: column; gap: 12px; min-width: 0 }
+.rv-brow { display: flex; flex-direction: column; gap: 5px }
+.rv-brow-head { display: flex; justify-content: space-between; gap: 8px; font: 600 14px/1.1 var(--f-ui); color: var(--g-ink) }
+.rv-brow-head > span:first-child { display: inline-flex; align-items: center; min-width: 0 }
+.rv-brow-head .cdot { margin-right: 6px }
+.rv-brow-head .rv-mono { font-size: 12px }
+.rv-brow .sb { min-width: 0 }
+
+@media (max-width: 1000px) {
+  .rv-bottom { grid-template-columns: minmax(0, 1fr) }
+  .rv-days { grid-template-columns: repeat(4, minmax(0, 1fr)) }
+}
+@media (max-width: 600px) {
+  .rv-days { grid-template-columns: repeat(2, minmax(0, 1fr)) }
+  .rv-brk { grid-template-columns: minmax(0, 1fr) }
+  .rv-sum { flex-direction: column; flex-wrap: nowrap; align-items: stretch; padding: 14px 16px; gap: 12px }
+  .rv-sum .sb { flex: none; width: 100%; min-width: 0 }
+  .rv-sum .stamp { align-self: flex-start }
+  .rv-cell { padding: 12px }
+  /* as in the calendar's day list: the Ring alone says the level, leaving the title room */
+  .rv-openlist .wb-pill { width: auto; padding: 4px; gap: 0; font-size: 0 }
+  .rv-openlist .wb-row { gap: 10px }
+}
