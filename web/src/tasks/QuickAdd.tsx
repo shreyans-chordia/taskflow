@@ -3,6 +3,7 @@ import { ApiError } from '../api/client';
 import { ColorButton } from '../components/ColorPicker';
 import type { Category, Priority } from '../api/types';
 import { nextSwatch, PRIORITY_SWATCHES, SWATCHES } from './format';
+import { PlaceButton } from './PlaceMenu';
 
 /** Makes a new category or priority level without leaving the form; Enter adds it, Escape is left to the panel. */
 export function QuickAdd({ kind, existing, create, onAdded, onCancel }: {
@@ -51,12 +52,7 @@ export function QuickAdd({ kind, existing, create, onAdded, onCancel }: {
           placeholder={kind === 'category' ? 'Category name, e.g. Finance' : 'Level name, e.g. Urgent'} />
       </div>
       {kind === 'priority' && (
-        <select className="wb-select tv-quick-pos" aria-label="Where it sits" value={position} onChange={(e) => setPosition(+e.target.value)}>
-          <option value={0}>At the top (most important)</option>
-          {existing.map((x, i) => (
-            <option key={x.id} value={i + 1}>Below {x.name}</option>
-          ))}
-        </select>
+        <PlaceButton levels={existing} color={color} value={position} onChange={setPosition} />
       )}
       <button type="button" className="btn btn-primary" onClick={() => void save()} disabled={busy}>
         Add

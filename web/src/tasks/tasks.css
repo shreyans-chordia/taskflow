@@ -96,7 +96,6 @@
 .tv-foot { display: flex; gap: 12px; padding-top: 16px; border-top: 1px solid var(--g-line) }
 .tv-quick { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 10px; padding: 12px; border-radius: 12px; background: var(--g-cell); box-shadow: inset 0 0 0 1px var(--g-line) }
 .tv-quick .field-input input { min-height: 44px; font: 400 15px/1 var(--f-ui) }
-.tv-quick-pos { flex: 0 1 auto; min-height: 44px; cursor: pointer }
 .tv-quick-name { flex: 1 1 160px }
 .tv-quick .btn { min-height: 40px }
 .tv-quick-err { flex-basis: 100% }
