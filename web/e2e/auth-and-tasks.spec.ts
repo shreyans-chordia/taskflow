@@ -1,6 +1,6 @@
 import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 
 /**
  * The whole path a new user takes, on the real API and database, with the 3D desk as the home screen:
@@ -15,6 +15,17 @@ const unique = (tag: string) => `${tag}-${Date.now()}-${Math.random().toString(3
 async function openTasks(page: Page) {
   await page.getByRole('navigation', { name: 'Desk shortcuts' }).getByRole('button', { name: 'Tasks', exact: true }).click();
   await expect(page.getByRole('dialog', { name: 'Your tasks' })).toBeVisible();
+}
+
+/** Pins a task through the corkboard's "+ Add task" form, then goes back to the board. */
+async function pinTask(scope: Page | Locator, title: string, priority?: string) {
+  await scope.getByRole('button', { name: '+ Add task' }).click();
+  await scope.getByLabel('Title').fill(title);
+  if (priority) await scope.getByRole('radio', { name: priority }).click();
+  await scope.getByRole('button', { name: 'Pin to corkboard' }).click();
+  await expect(scope.getByRole('status')).toContainText(`Pinned “${title}”`);
+  await scope.getByRole('button', { name: 'Done' }).click();
+  await expect(scope.getByRole('heading', { name: 'Your tasks' })).toBeVisible();
 }
 
 /** Closes the open panel; the camera flies back and the top bar is reachable again. */
@@ -76,35 +87,34 @@ async function openSignIn(page: Page) {
   await expect(welcome).toBeVisible();
 }
 
-test('a new user signs up, pins a task, and finds it again after signing back in (TASK-1, TASK-2, TASK-4, PR-1)', async ({ page }) => {
+test('a new user signs up, pins a task, marks it done, and finds it again after signing back in (TASK-1, TASK-2, TASK-4, PR-1)', async ({ page }) => {
   test.slow(); // sign-up, two reloads and a sign-in each rebuild the room on CI's CPU-only renderer
   const email = unique('flow');
   await signUp(page, 'Shreyans', email);
   await expect(page.getByRole('button', { name: 'TaskFlow account menu, signed in as Shreyans' })).toBeVisible();
 
-  // Add a task with an explicit priority level.
-  await page.getByLabel('New task').fill('Submit Lab 7 record');
-  await page.getByLabel('Priority').selectOption({ label: 'High' });
-  await page.getByRole('button', { name: 'Pin it' }).click();
-  const row = page.getByRole('listitem').filter({ hasText: 'Submit Lab 7 record' });
-  await expect(row).toContainText('High');
+  // Pin a task with an explicit priority level, from the corkboard's full form.
+  await pinTask(page.getByRole('dialog'), 'Submit Lab 7 record', 'High');
+  const note = page.getByRole('button', { name: /^Submit Lab 7 record/ });
+  await expect(note).toContainText('High');
 
   // The session lives in HttpOnly cookies, so a reload keeps you signed in and the task comes back from the API.
   await page.reload();
   await openTasks(page);
-  await expect(row).toBeVisible();
+  await expect(note).toBeVisible();
 
-  // Mark it done; the state is saved on the server.
-  await row.getByRole('checkbox').check();
-  await expect(row.getByRole('checkbox')).toBeChecked();
+  // Mark it done from its note; the state is saved on the server.
+  await note.click();
+  await page.getByRole('checkbox', { name: 'Mark as complete' }).click(); // click: once ticked it is renamed "Completed"
+  await expect(page.getByRole('checkbox', { name: 'Completed' })).toBeChecked();
   await page.reload();
   await openTasks(page);
-  await expect(page.getByRole('listitem').filter({ hasText: 'Submit Lab 7 record' }).getByRole('checkbox')).toBeChecked();
+  await expect(page.getByRole('button', { name: 'Submit Lab 7 record, done' })).toBeVisible();
 
   // Sign out, then back in: password, then the code from the email (AUTH-6).
   await signOut(page);
   await signIn(page, email);
-  await expect(page.getByText('Submit Lab 7 record')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Submit Lab 7 record, done' })).toBeVisible();
 });
 
 test('a task gets every detail, a checklist and an edit, survives a reload, then is deleted (TASK-3, TASK-5, TASK-6, DL-1, CAT-2, SUB-1)', async ({ page }) => {
@@ -158,6 +168,34 @@ test('a task gets every detail, a checklist and an edit, survives a reload, then
   await panel.getByRole('button', { name: 'Delete task' }).click();
   await expect(panel.getByRole('status')).toContainText('Deleted “Write Lab 8 record (final)”.');
   await expect(panel.getByRole('button', { name: /^Write Lab 8 record/ })).toHaveCount(0);
+});
+
+test('the corkboard edits and deletes notes in its Edit and Delete modes (TASK-4, TASK-5)', async ({ page }) => {
+  test.slow();
+  await signUp(page, 'Board', unique('board'));
+  const panel = page.getByRole('dialog');
+  await pinTask(panel, 'Draft Lab 10 case study');
+  await pinTask(panel, 'Print lab manual');
+
+  // Edit mode: a note opens its form; saving comes back to the board, still in Edit mode.
+  await panel.getByRole('group', { name: 'Board mode' }).getByRole('button', { name: 'Edit' }).click();
+  await panel.getByRole('button', { name: 'Draft Lab 10 case study: edit' }).click();
+  await panel.getByLabel('Title').fill('Draft Lab 10 UML case study');
+  await panel.getByRole('button', { name: 'Save changes' }).click();
+  await expect(panel.getByRole('button', { name: 'Draft Lab 10 UML case study: edit' })).toBeVisible();
+
+  // Delete mode: asks first; Delete task removes it.
+  await panel.getByRole('group', { name: 'Board mode' }).getByRole('button', { name: 'Delete' }).click();
+  await panel.getByRole('button', { name: 'Print lab manual: delete' }).click();
+  await expect(panel.getByRole('alert')).toContainText('Delete “Print lab manual”?');
+  await panel.getByRole('button', { name: 'Delete task' }).click();
+  await expect(panel.getByRole('status')).toContainText('Deleted “Print lab manual”.');
+  await expect(panel.getByRole('button', { name: /^Print lab manual/ })).toHaveCount(0);
+
+  // The rail's "Edit / Delete" opens the board straight in Edit mode.
+  await closePanel(page);
+  await page.getByRole('navigation', { name: 'Desk shortcuts' }).getByRole('button', { name: 'Edit / Delete' }).click();
+  await expect(panel.getByRole('group', { name: 'Board mode' }).getByRole('button', { name: 'Edit' })).toHaveAttribute('aria-pressed', 'true');
 });
 
 test('the wall calendar shows a deadline and the search key finds the task (CAL-1, CAL-3, SF-1, SF-4, SF-5, SF-6)', async ({ page }) => {
@@ -241,16 +279,14 @@ test('the organizer renames, adds, reorders and deletes categories and sets the 
   // It all holds after a reload, and a quick-added task comes out Low.
   await page.reload();
   await openTasks(page);
-  await page.getByLabel('New task').fill('Book train tickets');
-  await page.getByRole('button', { name: 'Pin it' }).click();
-  await expect(page.getByRole('listitem').filter({ hasText: 'Book train tickets' })).toContainText('Low');
+  await pinTask(page.getByRole('dialog'), 'Book train tickets');
+  await expect(page.getByRole('button', { name: /^Book train tickets/ })).toContainText('Low');
 });
 
 test('the category board shows tasks by category and closes back to the room (CAT-2)', async ({ page }) => {
   await signUp(page, 'Trays', unique('tray'));
-  await page.getByLabel('New task').fill('Revise normal forms');
-  await page.getByRole('button', { name: 'Pin it' }).click();
-  await expect(page.getByRole('listitem').filter({ hasText: 'Revise normal forms' })).toBeVisible();
+  await pinTask(page.getByRole('dialog'), 'Revise normal forms');
+  await expect(page.getByRole('button', { name: 'Revise normal forms' })).toBeVisible();
   await closePanel(page);
 
   // "Categories" on the rail flies to the organizer and opens the category board; a chip switches category.
@@ -318,9 +354,8 @@ test("one account never sees another account's tasks", async ({ browser }) => {
   const pb = await b.newPage();
 
   await signUp(pa, 'Alice', unique('alice'));
-  await pa.getByLabel('New task').fill('Alice private task');
-  await pa.getByRole('button', { name: 'Pin it' }).click();
-  await expect(pa.getByText('Alice private task')).toBeVisible();
+  await pinTask(pa.getByRole('dialog'), 'Alice private task');
+  await expect(pa.getByRole('button', { name: 'Alice private task' })).toBeVisible();
 
   await signUp(pb, 'Bob', unique('bob'));
   await expect(pb.getByText('Nothing pinned yet')).toBeVisible();

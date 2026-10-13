@@ -118,12 +118,57 @@ describe('a task (TASK-4, TASK-5, SUB-1 to SUB-3)', () => {
     expect(screen.getByRole('heading', { name: 'Your tasks' })).toBeInTheDocument();
   });
 
-  it('the list also asks before deleting', async () => {
+});
+
+describe('the corkboard (TASK-2, TASK-4, TASK-5, CAT-2)', () => {
+  it('pins every task as a note, with a chip per category', async () => {
     renderViews();
-    await userEvent.click(await screen.findByRole('button', { name: 'Delete RDBMS mini project' }));
-    expect(screen.getByRole('alert')).toHaveTextContent('Delete “RDBMS mini project”?');
-    await userEvent.click(screen.getByRole('button', { name: 'Keep' }));
+    expect(await screen.findByRole('button', { name: 'RDBMS mini project' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Your tasks' })).toBeInTheDocument();
+    const chips = within(screen.getByRole('group', { name: 'Categories' }));
+    expect(chips.getByRole('button', { name: /^All/ })).toHaveAttribute('aria-pressed', 'true');
+    await userEvent.click(chips.getByRole('button', { name: /^Health/ }));
+    expect(screen.getByRole('heading', { name: 'Health tasks' })).toBeInTheDocument();
+    expect(screen.getByText('No tasks in Health yet.')).toBeInTheDocument();
+  });
+
+  it('Edit mode opens the note’s form, and saving comes back to the board, still in Edit mode', async () => {
+    api.tasks.update.mockResolvedValue({ ...base, title: 'RDBMS project' });
+    renderViews();
+    await userEvent.click(await screen.findByRole('button', { name: 'Edit' }));
+    expect(screen.getByText('Edit mode: pick a note to change it.')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'RDBMS mini project: edit' }));
+    expect(await screen.findByRole('button', { name: 'Save changes' })).toBeInTheDocument();
+    api.tasks.list.mockResolvedValue([{ ...base, title: 'RDBMS project' }]);
+    await userEvent.clear(screen.getByLabelText('Title'));
+    await userEvent.type(screen.getByLabelText('Title'), 'RDBMS project');
+    await userEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    expect(await screen.findByRole('heading', { name: 'Your tasks' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Edit' })).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('Delete mode asks first, Keep leaves it, Delete removes it', async () => {
+    api.tasks.remove.mockResolvedValue(undefined as never);
+    renderViews();
+    await userEvent.click(await screen.findByRole('button', { name: 'Delete' }));
+    await userEvent.click(screen.getByRole('button', { name: 'RDBMS mini project: delete' }));
+    expect(screen.getByRole('alert')).toHaveTextContent('Delete “RDBMS mini project” and its 2 checklist items?');
+    expect(screen.getByRole('button', { name: 'Keep it' })).toHaveFocus();
+    await userEvent.click(screen.getByRole('button', { name: 'Keep it' }));
     expect(api.tasks.remove).not.toHaveBeenCalled();
+
+    await userEvent.click(screen.getByRole('button', { name: 'RDBMS mini project: delete' }));
+    api.tasks.list.mockResolvedValue([]);
+    await userEvent.click(screen.getByRole('button', { name: 'Delete task' }));
+    expect(api.tasks.remove).toHaveBeenCalledWith('t1');
+    expect(await screen.findByRole('status')).toHaveTextContent('Deleted “RDBMS mini project”.');
+  });
+
+  it('+ Add task opens the full form, in the chosen category', async () => {
+    renderViews({ type: 'list', categoryId: 'c2' });
+    await userEvent.click(await screen.findByRole('button', { name: '+ Add task' }));
+    expect(await screen.findByRole('heading', { name: 'New task' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Health' })).toHaveAttribute('aria-pressed', 'true');
   });
 });
 

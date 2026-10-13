@@ -1,55 +1,70 @@
-import { useEffect, useRef, useState, type CSSProperties, type FormEvent } from 'react';
+import { useState, type CSSProperties } from 'react';
 import { ApiError } from '../api/client';
 import type { Task } from '../api/types';
 import { Ring } from '../components/Ring';
+import { boardOrder, CategoryChips, Cork } from './board';
 import { dueText, isOverdue, rankLevels } from './format';
 import { useTaskActions, useTaskData } from './useTaskActions';
 
+export type BoardMode = 'browse' | 'edit' | 'delete';
+
+const MODES: Array<[BoardMode, string]> = [
+  ['browse', 'Browse'],
+  ['edit', 'Edit'],
+  ['delete', 'Delete'],
+];
+const HINTS: Record<BoardMode, string> = {
+  browse: '',
+  edit: 'Edit mode: pick a note to change it.',
+  delete: 'Delete mode: pick a note to remove it. You will be asked to confirm first.',
+};
+
 export interface TaskListProps {
   titleId: string;
-  eyebrow?: string;
-  heading?: string;
-  /** Show only tasks in this category (a tray on the organizer). */
+  /** Show only tasks in this category (a chip); undefined is All. */
   categoryId?: string;
-  /** Put the cursor in the new-task field. */
-  focusAdd?: boolean;
-  /** A line shown above the list, e.g. after a task was deleted. */
+  mode?: BoardMode;
+  /** A line shown above the board, e.g. after a task was deleted from its own screen. */
   message?: string;
-  onOpen?: (id: string) => void;
-  onAddFull?: () => void;
+  onPick: (categoryId: string | undefined) => void;
+  onMode: (mode: BoardMode) => void;
+  onOpen: (id: string) => void;
+  onEdit: (id: string) => void;
+  onAdd: () => void;
 }
 
-/** Quick add, tick and delete, with each title opening the full task (TASK-1, TASK-2, TASK-4, TASK-5, PR-1). */
-export function TaskList({ titleId, eyebrow = 'Corkboard', heading = 'Your tasks', categoryId, focusAdd, message, onOpen, onAddFull }: TaskListProps) {
+/**
+ * The corkboard, as in the room: every task pinned as a sticky note, a chip per category, and three modes. Browse
+ * opens a note (TASK-2 list, TASK-3 view), Edit opens its form (TASK-4), Delete asks first and removes it (TASK-5).
+ */
+export function TaskList({ titleId, categoryId, mode = 'browse', message, onPick, onMode, onOpen, onEdit, onAdd }: TaskListProps) {
   const { tasks, priorities, categories } = useTaskData();
   const act = useTaskActions();
-  const [title, setTitle] = useState('');
-  const [priorityId, setPriorityId] = useState('');
+  const [confirm, setConfirm] = useState<Task | null>(null);
+  const [note, setNote] = useState(message ?? '');
   const [error, setError] = useState('');
-  const [confirm, setConfirm] = useState<string | null>(null);
-  const addRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    if (focusAdd) addRef.current?.focus();
-  }, [focusAdd]);
-
+  const cats = categories.data ?? [];
+  const all = tasks.data ?? [];
   const levels = rankLevels(priorities.data ?? []);
-  const byId = new Map(levels.map((p) => [p.id, p]));
-  const catName = new Map((categories.data ?? []).map((c) => [c.id, c.name]));
-  const shown = (tasks.data ?? []).filter((t) => !categoryId || t.categoryIds.includes(categoryId));
+  const chosen = categoryId ? cats.find((c) => c.id === categoryId) : undefined; // deleted meanwhile: All
+  const shown = boardOrder(chosen ? all.filter((t) => t.categoryIds.includes(chosen.id)) : all, levels);
+  const heading = chosen ? `${chosen.name} tasks` : 'Your tasks';
 
-  async function add(e: FormEvent) {
-    e.preventDefault();
-    if (!title.trim()) {
-      setError('Give the task a title.');
-      return;
-    }
+  const switchMode = (m: BoardMode) => {
+    setConfirm(null);
+    setError('');
+    onMode(m);
+  };
+
+  async function remove(t: Task) {
     setError('');
     try {
-      await act.create.mutateAsync({ title: title.trim(), ...(priorityId ? { priorityId } : {}), ...(categoryId ? { categoryIds: [categoryId] } : {}) });
-      setTitle('');
+      await act.remove.mutateAsync(t.id);
+      setConfirm(null);
+      setNote(`Deleted “${t.title}”.`);
     } catch (err) {
-      setError(err instanceof ApiError ? Object.values(err.fields)[0] ?? err.message : 'Could not save the task.');
+      setError(err instanceof ApiError ? err.message : 'Could not delete the task. Try again.');
     }
   }
 
@@ -57,78 +72,72 @@ export function TaskList({ titleId, eyebrow = 'Corkboard', heading = 'Your tasks
     <>
       <div className="tv-head">
         <div>
-          <div className="eyebrow">{eyebrow}</div>
+          <div className="eyebrow">{chosen ? 'Category organizer' : 'Corkboard'}</div>
           <h1 id={titleId} className="title" tabIndex={-1}>
             {heading}
           </h1>
         </div>
-        {onAddFull && (
-          <button type="button" className="btn btn-primary" onClick={onAddFull}>
+        <div className="tv-row board-actions">
+          <div className="seg" role="group" aria-label="Board mode">
+            {MODES.map(([m, label]) => (
+              <button key={m} type="button" aria-pressed={mode === m} onClick={() => switchMode(m)}>
+                {label}
+              </button>
+            ))}
+          </div>
+          <button type="button" className="btn btn-primary" onClick={onAdd}>
             + Add task
           </button>
-        )}
+        </div>
       </div>
-      {message && <p className="tv-ok" role="status">{message}</p>}
-      <form className="wb-add" onSubmit={add} noValidate>
-        <div className="field" style={{ flex: 1 }}>
-          <label className="label" htmlFor={`${titleId}-new`}>New task</label>
-          <div className="field-input">
-            <input ref={addRef} id={`${titleId}-new`} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Submit Lab 7 record" aria-invalid={error ? true : undefined} aria-describedby={error ? `${titleId}-err` : undefined} />
+
+      <CategoryChips cats={cats} tasks={all} current={chosen?.id} onPick={(c) => (setConfirm(null), onPick(c))} />
+
+      {note && (
+        <p className="tv-ok" role="status">
+          {note}
+        </p>
+      )}
+      {confirm ? (
+        <div className="tv-confirm" role="alert">
+          <strong>
+            Delete “{confirm.title}”{confirm.subtasks.length ? ` and its ${confirm.subtasks.length} checklist item${confirm.subtasks.length > 1 ? 's' : ''}` : ''}?
+          </strong>
+          <span className="wb-note">This can’t be undone.</span>
+          <div className="tv-row">
+            <button type="button" className="btn btn-danger" onClick={() => void remove(confirm)} disabled={act.remove.isPending}>
+              Delete task
+            </button>
+            <button type="button" className="btn" autoFocus onClick={() => setConfirm(null)}>
+              Keep it
+            </button>
           </div>
         </div>
-        <div className="field">
-          <label className="label" htmlFor={`${titleId}-pr`}>Priority</label>
-          <select id={`${titleId}-pr`} className="wb-select" value={priorityId} onChange={(e) => setPriorityId(e.target.value)}>
-            <option value="">Default</option>
-            {levels.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
-        </div>
-        <button type="submit" className="btn btn-primary" disabled={act.create.isPending}>
-          Pin it
-        </button>
-      </form>
-      {error && <p className="field-error" id={`${titleId}-err`} role="alert">{error}</p>}
+      ) : (
+        HINTS[mode] && <p className="wb-note board-hint">{HINTS[mode]}</p>
+      )}
+      {error && (
+        <p className="field-error" role="alert">
+          {error}
+        </p>
+      )}
 
       {tasks.isPending ? (
         <p className="wb-note">Loading your tasks…</p>
       ) : tasks.isError ? (
-        <p className="wb-note" role="alert">Could not load your tasks. {tasks.error instanceof ApiError ? tasks.error.message : ''}</p>
-      ) : shown.length === 0 ? (
-        <p className="wb-empty">{categoryId ? 'Nothing in this tray yet.' : 'Nothing pinned yet. Add your first task above.'}</p>
+        <p className="wb-note" role="alert">
+          Could not load your tasks. {tasks.error instanceof ApiError ? tasks.error.message : ''}
+        </p>
       ) : (
-        <ul className="wb-list" aria-label="Tasks">
-          {shown.map((t) =>
-            confirm === t.id ? (
-              <li key={t.id} className="wb-row wb-confirm" role="alert">
-                <span className="wb-text">
-                  <strong>Delete “{t.title}”?</strong>
-                  <span className="wb-meta">This can’t be undone.</span>
-                </span>
-                <button type="button" className="btn btn-danger wb-del" onClick={() => act.remove.mutateAsync(t.id).catch(() => setError('Could not delete the task.')).finally(() => setConfirm(null))}>
-                  Delete
-                </button>
-                <button type="button" className="btn wb-del" autoFocus onClick={() => setConfirm(null)}>
-                  Keep
-                </button>
-              </li>
-            ) : (
-              <TaskRow
-                key={t.id}
-                task={t}
-                level={byId.get(t.priorityId)}
-                levels={levels.length}
-                categories={t.categoryIds.map((c) => catName.get(c) ?? '').filter(Boolean)}
-                onOpen={onOpen}
-                onToggle={(done) => act.setDone.mutateAsync({ id: t.id, done }).catch(() => setError('Could not update the task. Try again.'))}
-                onDelete={() => setConfirm(t.id)}
-              />
-            ),
-          )}
-        </ul>
+        <Cork
+          tasks={shown}
+          levels={levels}
+          cats={cats}
+          label={heading}
+          empty={chosen ? `No tasks in ${chosen.name} yet.` : 'Nothing pinned yet. Add your first task.'}
+          action={mode === 'browse' ? 'open' : mode}
+          onNote={(t) => (mode === 'edit' ? onEdit(t.id) : mode === 'delete' ? (setNote(''), setConfirm(t)) : onOpen(t.id))}
+        />
       )}
     </>
   );

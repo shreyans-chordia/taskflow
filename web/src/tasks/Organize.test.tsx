@@ -164,8 +164,10 @@ describe('categories', () => {
   it('opens a category’s tasks from its count, and Back returns to the organizer', async () => {
     await renderOrganizer();
     await userEvent.click(await catRows().findByRole('button', { name: 'Open the 2 tasks in Health' }));
-    expect(await screen.findByRole('heading', { name: 'Health' })).toBeInTheDocument();
-    expect(screen.getByText('Gym')).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Health tasks' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Gym' })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: /Back/ }));
+    expect(await screen.findByRole('heading', { name: 'Categories & priorities' })).toBeInTheDocument();
   });
 });
 

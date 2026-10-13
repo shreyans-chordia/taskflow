@@ -20,10 +20,12 @@ test('without WebGL the home screen is the 2D task list, fully usable', async ({
   await expect(page.getByRole('navigation', { name: 'Desk shortcuts' })).toHaveCount(0);
   expect(await page.evaluate(() => document.querySelectorAll('canvas').length)).toBe(0);
 
-  await page.getByLabel('New task').fill('Works in 2D too');
-  await page.getByRole('button', { name: 'Pin it' }).click();
+  await page.getByRole('button', { name: '+ Add task' }).click();
+  await page.getByLabel('Title').fill('Works in 2D too');
+  await page.getByRole('button', { name: 'Pin to corkboard' }).click();
+  await expect(page.getByRole('status')).toContainText('Pinned “Works in 2D too”');
   await page.reload();
-  await expect(page.getByText('Works in 2D too')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Works in 2D too' })).toBeVisible();
 
   // The calendar and search are tabs here, in place of the desk's objects (CAL-1, SF-1).
   const tabs = page.getByRole('navigation', { name: 'Sections' });

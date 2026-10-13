@@ -31,7 +31,7 @@ function renderBench() {
   );
 }
 
-describe('<Workbench> ticking a task (TASK-4)', () => {
+describe('<Workbench> marking a task done (TASK-4)', () => {
   beforeEach(() => {
     vi.mocked(authApi.me).mockResolvedValue({ user: { id: 'u', name: 'S', email: 's@example.com', createdAt: '' }, csrfToken: 't' });
     vi.mocked(tasksApi.list).mockResolvedValue([task]);
@@ -39,26 +39,27 @@ describe('<Workbench> ticking a task (TASK-4)', () => {
     vi.mocked(prioritiesApi.list).mockResolvedValue([{ id: 'p1', name: 'Medium', color: '#F0A81C', order: 1, isDefault: true }]);
   });
 
-  it('shows the tick straight away, before the server answers', async () => {
+  it('opens a note and shows the tick straight away, before the server answers', async () => {
     let finish: (t: Task) => void = () => {};
     vi.mocked(tasksApi.update).mockReturnValue(new Promise<Task>((r) => (finish = r)));
     renderBench();
-    const box = await screen.findByRole('checkbox', { name: /Mark Submit Lab 7 record/ });
+    await userEvent.click(await screen.findByRole('button', { name: 'Submit Lab 7 record' }));
+    const box = await screen.findByRole('checkbox', { name: 'Mark as complete' });
     await userEvent.click(box);
     expect(box).toBeChecked();
     expect(tasksApi.update).toHaveBeenCalledWith('t1', { done: true });
     vi.mocked(tasksApi.list).mockResolvedValue([{ ...task, done: true }]);
     finish({ ...task, done: true });
-    await waitFor(() => expect(screen.getByRole('checkbox', { name: /Mark Submit Lab 7 record/ })).toBeChecked());
+    await waitFor(() => expect(screen.getByRole('checkbox', { name: 'Completed' })).toBeChecked());
   });
 
   it('puts the tick back and says so when the server refuses', async () => {
     vi.mocked(tasksApi.update).mockRejectedValue(new ApiError(500, 'INTERNAL', 'boom'));
     renderBench();
-    const box = await screen.findByRole('checkbox', { name: /Mark Submit Lab 7 record/ });
-    await userEvent.click(box);
-    expect(await screen.findByRole('alert')).toHaveTextContent('Could not update the task');
-    expect(screen.getByRole('checkbox', { name: /Mark Submit Lab 7 record/ })).not.toBeChecked();
+    await userEvent.click(await screen.findByRole('button', { name: 'Submit Lab 7 record' }));
+    await userEvent.click(await screen.findByRole('checkbox', { name: 'Mark as complete' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('boom'); // the server's own reason
+    expect(screen.getByRole('checkbox', { name: 'Mark as complete' })).not.toBeChecked();
   });
 });
 
