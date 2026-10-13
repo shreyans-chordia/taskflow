@@ -303,6 +303,37 @@ test('the category board shows tasks by category and closes back to the room (CA
   await expect(rail.getByRole('button', { name: 'Tasks', exact: true })).toBeEnabled();
 });
 
+test('the notebook reviews the week and the desk clock runs a focus session (TASK-4, POM-1, POM-4, POM-5)', async ({ page }) => {
+  await signUp(page, 'Review', unique('review'));
+  const dialog = page.getByRole('dialog');
+  await pinTask(dialog, 'Finish the UML case study');
+  await dialog.getByRole('button', { name: 'Finish the UML case study' }).click();
+  await dialog.getByRole('checkbox', { name: 'Mark as complete' }).click();
+  await expect(dialog.getByRole('checkbox', { name: 'Completed' })).toBeChecked();
+  await closePanel(page);
+
+  // The notebook: what was finished today shows on today's column and in the summary.
+  const rail = page.getByRole('navigation', { name: 'Desk shortcuts' });
+  await rail.getByRole('button', { name: 'Weekly review' }).click();
+  await expect(dialog.getByRole('region', { name: 'Week summary' }).getByRole('img', { name: '1 of 1 done' })).toBeVisible();
+  await expect(dialog.getByRole('group', { name: /, today: 1 of 1 done$/ }).getByRole('button', { name: 'Finish the UML case study, done' })).toBeVisible();
+  await closePanel(page);
+
+  // The clock: a 15-minute session counts down, pauses and resets; nothing in it refers to a task.
+  await rail.getByRole('button', { name: 'Pomodoro' }).click();
+  await expect(dialog.getByRole('heading', { name: 'Focus timer' })).toBeVisible();
+  await dialog.getByRole('button', { name: '15 min' }).click();
+  await dialog.getByRole('button', { name: 'Start' }).click();
+  await expect(dialog.getByText('Focusing')).toBeVisible();
+  await expect(dialog.getByRole('timer')).toHaveText(/^14:5\d$/);
+  await dialog.getByRole('button', { name: 'Pause' }).click();
+  await expect(dialog.getByRole('button', { name: 'Resume' })).toBeVisible();
+  await dialog.getByRole('button', { name: 'Reset' }).click();
+  await expect(dialog.getByRole('timer')).toHaveText('15:00');
+  await expect(dialog.getByRole('status')).toContainText('not linked to any task');
+  await closePanel(page);
+});
+
 test('a forgotten password is reset with an emailed code, and the old one stops working (AUTH-8, AUTH-9)', async ({ page }) => {
   test.slow(); // builds the desk three times (sign-up, after the reset, after signing back in): ~57 s on CI's CPU renderer
   const email = unique('reset');

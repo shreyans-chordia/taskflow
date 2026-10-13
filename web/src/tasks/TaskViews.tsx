@@ -4,6 +4,7 @@ import { CalendarView } from './CalendarView';
 import { CategoriesView } from './CategoriesView';
 import { today } from './format';
 import { OrganizeView } from './OrganizeView';
+import { ReviewView } from './ReviewView';
 import { DEFAULT_FILTERS, SearchView, type SearchFilters } from './SearchView';
 import { TaskDetail } from './TaskDetail';
 import { TaskForm } from './TaskForm';
@@ -20,10 +21,12 @@ export type TaskView =
   | { type: 'search'; filters?: SearchFilters }
   | { type: 'organize' }
   /** The category board; no categoryId is "All". */
-  | { type: 'categories'; categoryId?: string };
+  | { type: 'categories'; categoryId?: string }
+  /** The weekly review; `week` is weeks from this one (0 now, -1 last week). */
+  | { type: 'review'; week?: number };
 
 /** The section a stack starts on, for the 2D page's tabs. */
-export type TaskSection = 'list' | 'calendar' | 'search' | 'categories';
+export type TaskSection = 'list' | 'calendar' | 'search' | 'categories' | 'review';
 
 /**
  * The task screens and the way between them: list, calendar or search → task → edit, with Back retracing the steps.
@@ -42,7 +45,7 @@ export function TaskViews({ titleId, initial, onExit }: { titleId: string; initi
    * calendar, search or the organizer), keeping the way back from there.
    */
   const toStart = (message?: string) => {
-    const at = stack.findLastIndex((v) => v.type === 'list' || v.type === 'calendar' || v.type === 'search' || v.type === 'categories' || v.type === 'organize');
+    const at = stack.findLastIndex((v) => v.type === 'list' || v.type === 'calendar' || v.type === 'search' || v.type === 'categories' || v.type === 'organize' || v.type === 'review');
     if (at < 0) return setStack([{ type: 'list', message }]);
     const home = stack[at]!;
     setStack([...stack.slice(0, at), home.type === 'list' ? { ...home, message } : home]);
@@ -111,6 +114,9 @@ export function TaskViews({ titleId, initial, onExit }: { titleId: string; initi
           onOpen={(id) => push({ type: 'detail', id })}
           onManage={() => push({ type: 'organize' })}
         />
+      )}
+      {view.type === 'review' && (
+        <ReviewView titleId={titleId} week={view.week ?? 0} onWeek={(week) => replace({ type: 'review', week })} onOpen={(id) => push({ type: 'detail', id })} />
       )}
       {view.type === 'organize' && (
         <OrganizeView titleId={titleId} onOpenCategory={(c) => push({ type: 'categories', categoryId: c.id })} />

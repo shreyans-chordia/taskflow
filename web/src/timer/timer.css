@@ -1,0 +1,39 @@
+/* The Pomodoro panel (the room's .tmwrap) and the timer's notices (the room's .toasts). */
+.tm-mode { align-self: flex-end }
+.tm-wrap { display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 28px; align-items: center }
+.tm-dial { position: relative; width: 280px; height: 280px }
+.tm-ring { position: absolute; inset: 0; width: 100%; height: 100% }
+.tm-ring path { transition: stroke-dasharray 200ms ease-out }
+.tm-face { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px }
+.tm-clock { font: 500 58px/1 var(--f-mono); letter-spacing: -.02em; color: var(--g-ink); font-variant-numeric: tabular-nums }
+.tm-sub { color: var(--g-sub) }
+.tm-state { padding: 4px 10px; border-radius: 99px; box-shadow: inset 0 0 0 1px var(--g-line); font: 600 11px/1 var(--f-label); letter-spacing: .12em; text-transform: uppercase; color: var(--g-sub) }
+.tm-state.on { background: var(--pen); color: var(--on-pen); box-shadow: none }
+.tm-side { display: flex; flex-direction: column; gap: 16px; min-width: 0 }
+.tm-chips { display: flex; flex-wrap: wrap; gap: 8px }
+.tm-chips .fchip:disabled { opacity: .5; cursor: default }
+.tm-two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px }
+.tm-two input:disabled { opacity: .6 }
+.tm-btns { gap: 10px }
+.tm-go { flex: 1 }
+.tm-stat { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 14px; background: var(--g-cell); box-shadow: inset 0 0 0 1px var(--g-line); font: 500 14px/1.3 var(--f-ui); color: var(--g-ink) }
+.tm-big { font: 500 30px/1 var(--f-mono) }
+.tm-note { margin: 0 }
+@media (max-width: 700px) {
+  .tm-wrap { grid-template-columns: minmax(0, 1fr); justify-items: center }
+  .tm-dial { width: 240px; height: 240px }
+  .tm-clock { font-size: 48px }
+  .tm-side { width: 100% }
+}
+
+.toasts { position: fixed; left: 50%; bottom: calc(max(14px, env(safe-area-inset-bottom, 0px)) + 70px); transform: translateX(-50%); z-index: 70; display: flex; flex-direction: column; align-items: center; gap: 8px; width: min(560px, calc(100% - 32px)); pointer-events: none }
+.toast { pointer-events: auto; display: flex; align-items: center; gap: 12px; padding: 8px 8px 8px 16px; border-radius: 14px; color: var(--g-ink); font: 500 14px/1.35 var(--f-ui); animation: toast-in 220ms ease-out }
+.toast.out { animation: toast-out 200ms ease-in forwards }
+.toast-text { flex: 1 }
+.toast .btn { min-height: 36px; padding: 0 12px; font-size: 13px }
+.toast-x { flex: none; width: 36px; height: 36px; display: grid; place-items: center; border: 0; border-radius: 50%; background: transparent; color: var(--g-ink); cursor: pointer }
+.toast-x:hover { background: var(--g-field) }
+.toast-x svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round }
+@keyframes toast-in { from { opacity: 0; transform: translateY(10px) } }
+@keyframes toast-out { to { opacity: 0; transform: translateY(6px) } }
+@media (prefers-reduced-motion: reduce) { .toast, .toast.out { animation: none } .tm-ring path { transition: none } }

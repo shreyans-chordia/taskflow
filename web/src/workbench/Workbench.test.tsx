@@ -63,7 +63,7 @@ describe('<Workbench> marking a task done (TASK-4)', () => {
   });
 });
 
-describe('<Workbench> sections (CAL-1, SF-1, CAT-1)', () => {
+describe('<Workbench> sections (CAL-1, SF-1, CAT-1, TASK-4, POM-1)', () => {
   beforeEach(() => {
     vi.mocked(authApi.me).mockResolvedValue({ user: { id: 'u', name: 'S', email: 's@example.com', createdAt: '' }, csrfToken: 't' });
     vi.mocked(tasksApi.list).mockResolvedValue([task]);
@@ -71,7 +71,7 @@ describe('<Workbench> sections (CAL-1, SF-1, CAT-1)', () => {
     vi.mocked(prioritiesApi.list).mockResolvedValue([{ id: 'p1', name: 'Medium', color: '#F0A81C', order: 1, isDefault: true }]);
   });
 
-  it('reaches the calendar, search and the organizer through tabs, and Tasks brings the list back', async () => {
+  it('reaches the calendar, search, the organizer, the weekly review and the timer through tabs, and Tasks brings the list back', async () => {
     renderBench();
     const tabs = await screen.findByRole('navigation', { name: 'Sections' });
     expect(screen.getByRole('button', { name: 'Tasks' })).toHaveAttribute('aria-current', 'page');
@@ -83,6 +83,11 @@ describe('<Workbench> sections (CAL-1, SF-1, CAT-1)', () => {
     expect(await screen.findByRole('heading', { name: 'All tasks' })).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Manage categories & priorities' }));
     expect(await screen.findByRole('heading', { name: 'Categories & priorities' })).toBeInTheDocument();
+    await userEvent.click(within(tabs).getByRole('button', { name: 'Weekly review' }));
+    expect(await screen.findByRole('region', { name: 'Week summary' })).toBeInTheDocument();
+    await userEvent.click(within(tabs).getByRole('button', { name: 'Pomodoro' }));
+    expect(await screen.findByRole('heading', { name: 'Focus timer' })).toBeInTheDocument();
+    expect(screen.getByRole('timer')).toHaveTextContent('25:00');
     await userEvent.click(within(tabs).getByRole('button', { name: 'Tasks' }));
     expect(await screen.findByRole('heading', { name: 'Your tasks' })).toBeInTheDocument();
   });
