@@ -7,12 +7,12 @@ import { OrganizeView } from './OrganizeView';
 import { DEFAULT_FILTERS, SearchView, type SearchFilters } from './SearchView';
 import { TaskDetail } from './TaskDetail';
 import { TaskForm } from './TaskForm';
-import { TaskList } from './TaskList';
+import { TaskList, type BoardMode } from './TaskList';
 import { useTaskData } from './useTaskActions';
 import './tasks.css';
 
 export type TaskView =
-  | { type: 'list'; categoryId?: string; eyebrow?: string; heading?: string; focusAdd?: boolean; message?: string }
+  | { type: 'list'; categoryId?: string; mode?: BoardMode; message?: string }
   | { type: 'detail'; id: string }
   | { type: 'form'; id?: string; categoryId?: string; date?: string }
   /** The month ("YYYY-MM") and the selected day; both default to today. */
@@ -73,15 +73,15 @@ export function TaskViews({ titleId, initial, onExit }: { titleId: string; initi
       )}
       {view.type === 'list' && (
         <TaskList
-          key={`${view.categoryId ?? 'all'}`}
           titleId={titleId}
-          eyebrow={view.eyebrow}
-          heading={view.heading}
           categoryId={view.categoryId}
-          focusAdd={view.focusAdd}
+          mode={view.mode}
           message={view.message}
+          onPick={(categoryId) => replace({ ...view, categoryId, message: undefined })}
+          onMode={(mode) => replace({ ...view, mode, message: undefined })}
           onOpen={(id) => push({ type: 'detail', id })}
-          onAddFull={() => push({ type: 'form', categoryId: view.categoryId })}
+          onEdit={(id) => push({ type: 'form', id })}
+          onAdd={() => push({ type: 'form', categoryId: view.categoryId })}
         />
       )}
       {view.type === 'calendar' && (
@@ -113,7 +113,7 @@ export function TaskViews({ titleId, initial, onExit }: { titleId: string; initi
         />
       )}
       {view.type === 'organize' && (
-        <OrganizeView titleId={titleId} onOpenCategory={(c) => push({ type: 'list', categoryId: c.id, eyebrow: 'Category', heading: c.name })} />
+        <OrganizeView titleId={titleId} onOpenCategory={(c) => push({ type: 'categories', categoryId: c.id })} />
       )}
       {view.type === 'detail' && (
         <TaskDetail key={view.id} id={view.id} titleId={titleId} onEdit={() => push({ type: 'form', id: view.id })} onDeleted={(title) => toStart(`Deleted “${title}”.`)} />
@@ -128,8 +128,9 @@ export function TaskViews({ titleId, initial, onExit }: { titleId: string; initi
             titleId={titleId}
             categoryId={view.categoryId}
             date={view.date}
-            // Saving an edit returns to the task; a new task keeps the form open for the next one.
-            onSaved={(id, created) => (created ? undefined : stack.length > 1 && stack[stack.length - 2]?.type === 'detail' ? back() : replace({ type: 'detail', id }))}
+            // Saving an edit returns to where it came from (the task, or the board in Edit mode); a new task keeps the
+            // form open for the next one.
+            onSaved={(id, created) => (created ? undefined : ['detail', 'list'].includes(stack[stack.length - 2]?.type ?? '') ? back() : replace({ type: 'detail', id }))}
             onCancel={back}
           />
         ))}

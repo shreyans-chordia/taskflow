@@ -69,8 +69,8 @@ function viewFor(target: Target): TaskView {
   if (kind === 'note' && id) return { type: 'detail', id };
   if (kind === 'add') return { type: 'form' };
   if (kind === 'tray' && id) return { type: 'categories', categoryId: id };
-  if (kind === 'manage') return { type: 'list', eyebrow: 'Edit or delete', heading: 'Your tasks' };
-  return { type: 'list', eyebrow: target.label, heading: 'Your tasks' };
+  if (kind === 'manage') return { type: 'list', mode: 'edit' };
+  return { type: 'list' };
 }
 
 /** The frosted panel an object opens over the desk. Escape, the × or a click outside closes it. */

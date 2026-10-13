@@ -1,10 +1,8 @@
 /* Task screens: list, task detail, edit form. Shared by the desk panel and the 2D page. */
 
 /* list */
-.wb-add { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap }
 .wb-select { min-height: 46px; padding: 0 10px; border: 0; border-bottom: 1.5px solid var(--g-ink); border-radius: 6px 6px 0 0; background: var(--g-field); color: var(--g-ink) }
-.wb-note, .wb-empty { margin: 8px 0; color: var(--g-sub) }
-.wb-empty { font: 700 28px/1.1 var(--f-script); color: var(--g-ink); text-align: center; padding: 24px 0 }
+.wb-note { margin: 8px 0; color: var(--g-sub) }
 .wb-list { list-style: none; margin: 0; padding: 0; border-top: 1.5px solid var(--g-ink) }
 .wb-row { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 8px 4px; border-bottom: 1px solid var(--g-line) }
 .wb-row input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--pen) }
@@ -18,7 +16,6 @@
 .wb-row.picked { background: color-mix(in srgb, var(--pen) 12%, transparent); border-radius: 8px }
 .wb-open { appearance: none; border: 0; background: none; padding: 0; text-align: left; cursor: pointer; color: inherit; font: inherit }
 .wb-open:hover .wb-title { color: var(--pen); text-decoration: underline; text-underline-offset: 3px }
-.wb-confirm { background: color-mix(in srgb, var(--coral) 14%, transparent); border-radius: 8px; padding-left: 10px }
 .btn-danger { background: var(--coral); border-color: var(--coral); color: #fff }
 .btn-danger:hover:not(:disabled) { background: color-mix(in srgb, var(--coral) 88%, black) }
 
@@ -175,6 +172,14 @@ button.org-count:hover { color: var(--pen); text-decoration: underline; text-und
 .org-confirm { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin: 6px 0; padding: 12px 14px; border-radius: 12px; box-shadow: inset 0 0 0 1.5px var(--coral); background: color-mix(in srgb, var(--coral) 8%, transparent) }
 .org-err { padding: 6px 4px 8px 52px }
 .org-add { align-self: flex-start; min-height: 42px }
+
+/* the corkboard's modes (Browse / Edit / Delete), as in the room */
+.board-actions { gap: 10px }
+/* the mode switch is React Bits' RubberSegment (components/), outlined in pen like the room's segmented control */
+.board-mode { box-shadow: inset 0 0 0 1.5px var(--pen); --rs-idle: .9; font-weight: 600 }
+.board-hint { margin: 0; font-size: 14px }
+.cork-pick .cork-note { outline: 2px dashed rgba(253, 249, 240, .85); outline-offset: 5px; border-radius: 2px }
+@media (max-width: 600px) { .board-mode { --rs-pad: 12px } .board-actions { width: 100% } }
 
 /* categories board, as in the room: chips with counts, then that category's notes pinned to cork (CAT-2) */
 .cat-chips { display: flex; flex-wrap: wrap; gap: 8px; padding-right: 36px }
