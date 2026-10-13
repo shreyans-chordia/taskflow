@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Category, Priority, Task } from '../api/types';
-import { addDays, boardOrder, dueLabel, isLate, localDay, openCountByCategory, toDeskData, weekDays, weekSummary } from './model';
+import { addDays, boardOrder, dueLabel, isLate, localDay, notePaper, openCountByCategory, toDeskData, weekDays, weekSummary } from './model';
 
 /** What the 3D desk shows, derived from API data. Requirement IDs refer to the TaskFlow IEEE SRS. */
 
@@ -22,19 +22,23 @@ const task = (over: Partial<Task>): Task => ({
 const NOW = new Date(2026, 9, 14, 15, 30);
 
 describe('toDeskData', () => {
-  it('orders categories as the user arranged them and keeps the default paper colours (CAT-2)', () => {
+  it('orders categories as the user arranged them and keeps the default icons (CAT-2)', () => {
     const d = toDeskData([], cats, prios, NOW);
     expect(d.today).toBe('2026-10-14');
     expect(d.categories.map((c) => c.name)).toEqual(['Study', 'Development', 'Hobbies']);
-    expect(d.categories[0]).toMatchObject({ note: '#F7B7CF', icon: 'book' });
-    // a category the user made gets a light tint of its own colour
-    expect(d.categories[2]!.note).toMatch(/^#[0-9a-f]{6}$/);
-    expect(d.categories[2]!.icon).toBe('dots');
+    expect(d.categories[0]!.icon).toBe('book');
+    expect(d.categories[2]!.icon).toBe('dots'); // a category the user made
   });
 
   it('ranks priority levels by their order, most important highest (PR-1)', () => {
     const d = toDeskData([task({ priorityId: 'hi' }), task({ priorityId: 'lo' })], [], prios, NOW);
     expect(d.tasks.map((t) => [t.level.name, t.level.rank])).toEqual([['High', 3], ['Low', 1]]);
+  });
+
+  it('gives each level its note paper: its colour half-mixed into the paper (PR-4)', () => {
+    const d = toDeskData([task({ priorityId: 'hi' }), task({ priorityId: 'lo' }), task({ priorityId: 'gone' })], [], prios, NOW);
+    expect(d.tasks.map((t) => t.level.paper)).toEqual([notePaper('#E04A2F'), notePaper('#4E9E78'), notePaper('#F0A81C')]);
+    expect(notePaper('#E04A2F')).toBe('#efa290'); // coral paper, dark ink still reads on it
   });
 
   it('falls back to the middle level when a task points at a level that no longer exists (PR-2)', () => {
@@ -53,7 +57,7 @@ describe('toDeskData', () => {
     expect(d.tasks[0]).toMatchObject({ due: '2026-10-20', time: '18:00' });
   });
 
-  it('colours a note by the first category and counts subtasks (SUB-5)', () => {
+  it('shows the first category on a note and counts subtasks (SUB-5)', () => {
     const d = toDeskData([task({ categoryIds: ['c2', 'c1'], subtasks: [{ id: 's', title: 'a', done: true }, { id: 't', title: 'b', done: false }] })], cats, prios, NOW);
     expect(d.tasks[0]!.category?.name).toBe('Development');
     expect(d.tasks[0]!.subtasks).toEqual({ done: 1, total: 2 });

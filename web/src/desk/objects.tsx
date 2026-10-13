@@ -145,7 +145,7 @@ export function Corkboard({ kit, data }: ObjectProps) {
 function paintNote(x: CanvasRenderingContext2D, w: number, h: number, t: DeskTask | undefined, today: string) {
   x.clearRect(0, 0, w, h);
   if (!t) return;
-  const paper = t.category?.note ?? '#F6DC8F';
+  const paper = t.level.paper; // the note is the colour of its priority level, as on the 2D corkboard
   const g = x.createLinearGradient(0, 0, 0, h);
   g.addColorStop(0, paper);
   g.addColorStop(1, shade(paper, -10));

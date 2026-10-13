@@ -40,7 +40,7 @@
 .tv-livepill { padding: 9px 16px; border-radius: 99px; font: 500 11px/1 var(--f-mono); letter-spacing: .06em; text-transform: uppercase; background: var(--g-field); box-shadow: inset 0 0 0 1px var(--g-line) }
 
 /* the paper note, as on the corkboard */
-.pn { position: relative; display: flex; flex-direction: column; width: 100%; min-height: 230px; background: color-mix(in srgb, var(--pc) 24%, #FDF9F0); border: 1px solid rgba(43, 46, 51, .2); border-radius: 2px; color: #2B2E33; transform: rotate(-3deg);
+.pn { position: relative; display: flex; flex-direction: column; width: 100%; min-height: 230px; background: color-mix(in srgb, var(--pc) 50%, #FDF9F0); border: 1px solid rgba(43, 46, 51, .2); border-radius: 2px; color: #2B2E33; transform: rotate(-3deg);
   /* drop-shadow, not box-shadow: Chrome's software compositor drops parts of the panel when a rotated element
      carries a blurred box-shadow inside a scrolling card. drop-shadow looks the same and draws reliably. */
   filter: drop-shadow(0 12px 12px rgba(0, 0, 0, .32)) }

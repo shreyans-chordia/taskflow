@@ -11,8 +11,6 @@ export interface DeskCategory {
   id: string;
   name: string;
   color: string;
-  /** Sticky-note paper colour for tasks in this category. */
-  note: string;
   icon: IconKind;
 }
 
@@ -20,6 +18,8 @@ export interface DeskLevel {
   id: string;
   name: string;
   color: string;
+  /** Sticky-note paper for tasks at this level: its colour, half-mixed into the paper (see `notePaper`). */
+  paper: string;
   /** Higher is more important. */
   rank: number;
 }
@@ -34,7 +34,7 @@ export interface DeskTask {
   due: string | null;
   /** Local time it is due ("HH:mm"), when it has one. */
   time: string | null;
-  /** The first category, which colours the note. */
+  /** The first category, shown as a chip on the note. */
   category: DeskCategory | null;
   categoryIds: string[];
   level: DeskLevel;
@@ -48,30 +48,23 @@ export interface DeskData {
   categories: DeskCategory[];
 }
 
-/** The six default categories keep the prototype's paper colours and icons; any other gets a tint of its own colour. */
-const DEFAULT_LOOK: Record<string, { note: string; icon: IconKind }> = {
-  study: { note: '#F7B7CF', icon: 'book' },
-  development: { note: '#BCD0F2', icon: 'code' },
-  personal: { note: '#D9C9F2', icon: 'person' },
-  health: { note: '#CFE6A9', icon: 'heart' },
-  career: { note: '#F8BBC2', icon: 'bag' },
-  others: { note: '#F6DC8F', icon: 'dots' },
-};
+/** The six default categories keep the prototype's icons; any other gets the dots. */
+const DEFAULT_ICON: Record<string, IconKind> = { study: 'book', development: 'code', personal: 'person', health: 'heart', career: 'bag', others: 'dots' };
+
+/** The sticky-note paper for a priority colour, the same mix as the 2D notes' CSS (`.pn`). */
+export const notePaper = (color: string) => mixHex(color, '#FDF9F0', 0.5);
 
 export { addDays, localDay } from '../tasks/format';
 
 export function toDeskData(tasks: Task[], categories: Category[], priorities: Priority[], now = new Date()): DeskData {
   const cats: DeskCategory[] = [...categories]
     .sort((a, b) => a.order - b.order)
-    .map((c) => {
-      const look = DEFAULT_LOOK[c.name.toLowerCase()];
-      return { id: c.id, name: c.name, color: c.color, note: look?.note ?? mixHex(c.color, '#FFFFFF', 0.38), icon: look?.icon ?? 'dots' };
-    });
+    .map((c) => ({ id: c.id, name: c.name, color: c.color, icon: DEFAULT_ICON[c.name.toLowerCase()] ?? 'dots' }));
   const byCat = new Map(cats.map((c) => [c.id, c]));
   const sorted = [...priorities].sort((a, b) => a.order - b.order);
-  const levels = new Map(sorted.map((p, i) => [p.id, { id: p.id, name: p.name, color: p.color, rank: sorted.length - i }]));
+  const levels = new Map(sorted.map((p, i) => [p.id, { id: p.id, name: p.name, color: p.color, paper: notePaper(p.color), rank: sorted.length - i }]));
   const middle = sorted[Math.floor((sorted.length - 1) / 2)];
-  const fallback: DeskLevel = (middle && levels.get(middle.id)) ?? { id: '', name: 'Medium', color: '#F0A81C', rank: 1 };
+  const fallback: DeskLevel = (middle && levels.get(middle.id)) ?? { id: '', name: 'Medium', color: '#F0A81C', paper: notePaper('#F0A81C'), rank: 1 };
 
   return {
     today: localDay(now),
