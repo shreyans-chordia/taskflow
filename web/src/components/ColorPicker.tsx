@@ -1,7 +1,7 @@
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent } from 'react';
-import { createPortal } from 'react-dom';
+import { useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent } from 'react';
 import { hexToHsv, hsvToHex, normalizeHex, PALETTE } from './color';
 import './color.css';
+import { Popover, PopoverHead } from './Popover';
 
 /**
  * A colour swatch that opens the room's colour picker: a big preview with the hex code, sixteen presets, and a
@@ -53,8 +53,6 @@ export function ColorPicker({ value, anchor, onPick, onClose }: {
   const [hsv, setHsv] = useState(() => hexToHsv(start));
   const [hex, setHex] = useState(start);
   const [typed, setTyped] = useState<string | null>(null); // the hex field while someone is typing in it
-  const [pos, setPos] = useState<{ left: number; top: number } | null>(null);
-  const root = useRef<HTMLDivElement>(null);
   const sv = useRef<HTMLDivElement>(null);
 
   const setFromHsv = (next: { h: number; s: number; v: number }) => {
@@ -63,55 +61,11 @@ export function ColorPicker({ value, anchor, onPick, onClose }: {
     setTyped(null);
   };
 
-  // Beside the swatch, flipped above it when there is no room below, always inside the window.
-  useLayoutEffect(() => {
-    const el = root.current;
-    if (!el) return;
-    const r = anchor.getBoundingClientRect();
-    const W = el.offsetWidth, H = el.offsetHeight;
-    const left = Math.min(Math.max(12, r.left - 10), window.innerWidth - W - 12);
-    let top = r.bottom + 10;
-    if (top + H > window.innerHeight - 12) top = Math.max(12, r.top - H - 10);
-    setPos({ left, top });
-  }, [anchor]);
-
-  // Start on the chosen preset (or the first), and close on a press anywhere else.
-  useEffect(() => {
-    const el = root.current;
-    (el?.querySelector<HTMLElement>('.cp-sw[aria-pressed="true"]') ?? el?.querySelector<HTMLElement>('.cp-sw'))?.focus();
-    const away = (e: globalThis.PointerEvent) => {
-      const t = e.target as Node;
-      if (!el?.contains(t) && !anchor.contains(t)) onClose(false);
-    };
-    document.addEventListener('pointerdown', away, true);
-    return () => document.removeEventListener('pointerdown', away, true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- once, on open
-  }, []);
-
   const pickAt = (e: PointerEvent<HTMLDivElement>) => {
     const r = e.currentTarget.getBoundingClientRect();
     const s = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
     const v = 1 - Math.min(1, Math.max(0, (e.clientY - r.top) / r.height));
     setFromHsv({ ...hsv, s, v });
-  };
-
-  const onKey = (e: KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === 'Escape') {
-      e.preventDefault();
-      e.stopPropagation(); // close the picker only, not the panel behind it
-      onClose(true);
-    } else if (e.key === 'Tab') {
-      // Keep focus inside the picker while it is open.
-      const f = [...root.current!.querySelectorAll<HTMLElement>('button, input, [tabindex="0"]')];
-      const i = f.indexOf(document.activeElement as HTMLElement);
-      if (e.shiftKey && i === 0) {
-        e.preventDefault();
-        f[f.length - 1]!.focus();
-      } else if (!e.shiftKey && i === f.length - 1) {
-        e.preventDefault();
-        f[0]!.focus();
-      }
-    }
   };
 
   const svKey = (e: KeyboardEvent<HTMLDivElement>) => {
@@ -121,29 +75,15 @@ export function ColorPicker({ value, anchor, onPick, onClose }: {
     setFromHsv({ ...hsv, s: Math.min(1, Math.max(0, hsv.s + step[0]!)), v: Math.min(1, Math.max(0, hsv.v + step[1]!)) });
   };
 
-  return createPortal(
-    <div
-      ref={root}
-      className="cpick glass"
-      role="dialog"
-      aria-label="Choose a colour"
-      style={{ '--sw': hex, '--hue': `hsl(${Math.round(hsv.h)} 100% 50%)`, left: pos?.left ?? -9999, top: pos?.top ?? 0 } as CSSProperties}
-      onKeyDown={onKey}
-      // Presses inside the picker must not reach the panel's "click outside closes" handler (React bubbles portals).
-      onMouseDown={(e) => e.stopPropagation()}
+  return (
+    <Popover
+      anchor={anchor}
+      label="Choose a colour"
+      style={{ '--sw': hex, '--hue': `hsl(${Math.round(hsv.h)} 100% 50%)` } as CSSProperties}
+      focus='.cp-sw[aria-pressed="true"]'
+      onClose={onClose}
     >
-      <div className="cp-head">
-        <span className="cp-prev" />
-        <div>
-          <div className="eyebrow">Colour</div>
-          <div className="cp-hexl">{hex}</div>
-        </div>
-        <button type="button" className="cp-x" aria-label="Close colour picker" onClick={() => onClose(true)}>
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M6 6L18 18M18 6L6 18" />
-          </svg>
-        </button>
-      </div>
+      <PopoverHead preview={<span className="cp-prev" />} caption="Colour" value={hex} closeLabel="Close colour picker" onClose={() => onClose(true)} />
       <div className="cp-grid" role="group" aria-label="Preset colours">
         {PALETTE.map((h) => (
           <button key={h} type="button" className="cp-sw" style={{ '--sw': h } as CSSProperties} aria-label={h} aria-pressed={h === hex} onClick={() => onPick(h)} />
@@ -205,7 +145,6 @@ export function ColorPicker({ value, anchor, onPick, onClose }: {
           Use colour
         </button>
       </div>
-    </div>,
-    document.body,
+    </Popover>
   );
 }

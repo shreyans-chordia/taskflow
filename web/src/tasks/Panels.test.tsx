@@ -116,7 +116,7 @@ describe('calendar', () => {
     renderViews(october);
     await userEvent.click(await screen.findByRole('button', { name: '+ Add task for this day' }));
     expect(await screen.findByRole('heading', { name: 'New task' })).toBeInTheDocument();
-    expect(screen.getByLabelText('Deadline · optional')).toHaveValue('2030-10-20');
+    expect(screen.getByLabelText('Deadline · optional')).toHaveTextContent('Sun 20 Oct 2030');
   });
 });
 

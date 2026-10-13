@@ -203,8 +203,13 @@ describe('the form (TASK-1, TASK-6, DL-1, CAT-2, PR-1)', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Health' }));
     await userEvent.click(screen.getByRole('radio', { name: 'Low' }));
     expect(screen.getByLabelText('Time · optional')).toBeDisabled(); // no time without a day
-    await userEvent.type(screen.getByLabelText('Deadline · optional'), '2026-10-22');
-    await userEvent.type(screen.getByLabelText('Time · optional'), '18:30');
+    // The pickers take a typed day and time as well as clicks (see DeadlinePickers.test.tsx).
+    await userEvent.click(screen.getByLabelText('Deadline · optional'));
+    await userEvent.type(within(screen.getByRole('dialog', { name: 'Choose a date' })).getByLabelText('Type a date'), '22/10/2026{Enter}');
+    expect(screen.getByLabelText('Deadline · optional')).toHaveTextContent('Thu 22 Oct 2026');
+    await userEvent.click(screen.getByLabelText('Time · optional'));
+    await userEvent.type(within(screen.getByRole('dialog', { name: 'Choose a time' })).getByLabelText('Type a time'), '6:30 pm{Enter}');
+    expect(screen.getByLabelText('Time · optional')).toHaveTextContent('6:30 PM');
     await userEvent.click(screen.getByRole('button', { name: 'Pin to corkboard' }));
 
     const body = api.tasks.create.mock.calls[0]![0];
@@ -229,7 +234,7 @@ describe('the form (TASK-1, TASK-6, DL-1, CAT-2, PR-1)', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Edit task' }));
     const title = screen.getByLabelText('Title');
     expect(title).toHaveValue('RDBMS mini project');
-    expect(screen.getByLabelText('Deadline · optional')).toHaveValue('2026-10-20');
+    expect(screen.getByLabelText('Deadline · optional')).toHaveTextContent('Tue 20 Oct 2026');
     expect(screen.getByRole('button', { name: 'Study' })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByRole('radio', { name: 'High' })).toHaveAttribute('aria-checked', 'true');
 
