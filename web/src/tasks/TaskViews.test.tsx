@@ -135,7 +135,7 @@ describe('the corkboard (TASK-2, TASK-4, TASK-5, CAT-2)', () => {
   it('Edit mode opens the note’s form, and saving comes back to the board, still in Edit mode', async () => {
     api.tasks.update.mockResolvedValue({ ...base, title: 'RDBMS project' });
     renderViews();
-    await userEvent.click(await screen.findByRole('button', { name: 'Edit' }));
+    await userEvent.click(await screen.findByRole('radio', { name: 'Edit' }));
     expect(screen.getByText('Edit mode: pick a note to change it.')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'RDBMS mini project: edit' }));
     expect(await screen.findByRole('button', { name: 'Save changes' })).toBeInTheDocument();
@@ -144,13 +144,13 @@ describe('the corkboard (TASK-2, TASK-4, TASK-5, CAT-2)', () => {
     await userEvent.type(screen.getByLabelText('Title'), 'RDBMS project');
     await userEvent.click(screen.getByRole('button', { name: 'Save changes' }));
     expect(await screen.findByRole('heading', { name: 'Your tasks' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Edit' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('radio', { name: 'Edit' })).toHaveAttribute('aria-checked', 'true');
   });
 
   it('Delete mode asks first, Keep leaves it, Delete removes it', async () => {
     api.tasks.remove.mockResolvedValue(undefined as never);
     renderViews();
-    await userEvent.click(await screen.findByRole('button', { name: 'Delete' }));
+    await userEvent.click(await screen.findByRole('radio', { name: 'Delete' }));
     await userEvent.click(screen.getByRole('button', { name: 'RDBMS mini project: delete' }));
     expect(screen.getByRole('alert')).toHaveTextContent('Delete “RDBMS mini project” and its 2 checklist items?');
     expect(screen.getByRole('button', { name: 'Keep it' })).toHaveFocus();
@@ -162,6 +162,19 @@ describe('the corkboard (TASK-2, TASK-4, TASK-5, CAT-2)', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Delete task' }));
     expect(api.tasks.remove).toHaveBeenCalledWith('t1');
     expect(await screen.findByRole('status')).toHaveTextContent('Deleted “RDBMS mini project”.');
+  });
+
+  it('the mode switch is a radio group: Tab reaches the chosen mode, arrows change it', async () => {
+    renderViews();
+    const modes = within(await screen.findByRole('radiogroup', { name: 'Board mode' }));
+    expect(modes.getByRole('radio', { name: 'Browse' })).toHaveAttribute('aria-checked', 'true');
+    modes.getByRole('radio', { name: 'Browse' }).focus();
+    await userEvent.keyboard('{ArrowRight}');
+    expect(modes.getByRole('radio', { name: 'Edit' })).toHaveAttribute('aria-checked', 'true');
+    expect(modes.getByRole('radio', { name: 'Edit' })).toHaveFocus();
+    expect(screen.getByText('Edit mode: pick a note to change it.')).toBeInTheDocument();
+    await userEvent.keyboard('{End}');
+    expect(modes.getByRole('radio', { name: 'Delete' })).toHaveAttribute('aria-checked', 'true');
   });
 
   it('+ Add task opens the full form, in the chosen category', async () => {

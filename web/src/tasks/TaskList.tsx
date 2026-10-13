@@ -2,6 +2,7 @@ import { useState, type CSSProperties } from 'react';
 import { ApiError } from '../api/client';
 import type { Task } from '../api/types';
 import { Ring } from '../components/Ring';
+import { RubberSegment } from '../components/RubberSegment';
 import { boardOrder, CategoryChips, Cork } from './board';
 import { dueText, isOverdue, rankLevels } from './format';
 import { useTaskActions, useTaskData } from './useTaskActions';
@@ -78,13 +79,19 @@ export function TaskList({ titleId, categoryId, mode = 'browse', message, onPick
           </h1>
         </div>
         <div className="tv-row board-actions">
-          <div className="seg" role="group" aria-label="Board mode">
-            {MODES.map(([m, label]) => (
-              <button key={m} type="button" aria-pressed={mode === m} onClick={() => switchMode(m)}>
-                {label}
-              </button>
-            ))}
-          </div>
+          <RubberSegment
+            aria-label="Board mode"
+            className="board-mode"
+            items={MODES.map(([value, label]) => ({ value, label }))}
+            value={mode}
+            onChange={switchMode}
+            size="lg"
+            equalSlots={false}
+            trackColor="var(--g-field)"
+            thumbColor="var(--pen)"
+            textColor="var(--pen)"
+            activeTextColor="var(--on-pen)"
+          />
           <button type="button" className="btn btn-primary" onClick={onAdd}>
             + Add task
           </button>

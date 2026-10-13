@@ -175,13 +175,11 @@ button.org-count:hover { color: var(--pen); text-decoration: underline; text-und
 
 /* the corkboard's modes (Browse / Edit / Delete), as in the room */
 .board-actions { gap: 10px }
-.seg { display: inline-flex; border: 1.5px solid var(--pen); border-radius: 10px; overflow: hidden; background: var(--g-field) }
-.seg > button { min-height: 43px; padding: 0 15px; border: 0; background: transparent; color: var(--pen); font: 600 14px/1 var(--f-ui); white-space: nowrap; cursor: pointer }
-.seg > button + button { border-left: 1.5px solid var(--pen) }
-.seg > button[aria-pressed="true"] { background: var(--pen); color: var(--on-pen) }
+/* the mode switch is React Bits' RubberSegment (components/), outlined in pen like the room's segmented control */
+.board-mode { box-shadow: inset 0 0 0 1.5px var(--pen); --rs-idle: .9; font-weight: 600 }
 .board-hint { margin: 0; font-size: 14px }
 .cork-pick .cork-note { outline: 2px dashed rgba(253, 249, 240, .85); outline-offset: 5px; border-radius: 2px }
-@media (max-width: 600px) { .seg > button { padding: 0 10px } .board-actions { width: 100% } }
+@media (max-width: 600px) { .board-mode { --rs-pad: 12px } .board-actions { width: 100% } }
 
 /* categories board, as in the room: chips with counts, then that category's notes pinned to cork (CAT-2) */
 .cat-chips { display: flex; flex-wrap: wrap; gap: 8px; padding-right: 36px }

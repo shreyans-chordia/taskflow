@@ -178,14 +178,14 @@ test('the corkboard edits and deletes notes in its Edit and Delete modes (TASK-4
   await pinTask(panel, 'Print lab manual');
 
   // Edit mode: a note opens its form; saving comes back to the board, still in Edit mode.
-  await panel.getByRole('group', { name: 'Board mode' }).getByRole('button', { name: 'Edit' }).click();
+  await panel.getByRole('radiogroup', { name: 'Board mode' }).getByRole('radio', { name: 'Edit' }).click();
   await panel.getByRole('button', { name: 'Draft Lab 10 case study: edit' }).click();
   await panel.getByLabel('Title').fill('Draft Lab 10 UML case study');
   await panel.getByRole('button', { name: 'Save changes' }).click();
   await expect(panel.getByRole('button', { name: 'Draft Lab 10 UML case study: edit' })).toBeVisible();
 
   // Delete mode: asks first; Delete task removes it.
-  await panel.getByRole('group', { name: 'Board mode' }).getByRole('button', { name: 'Delete' }).click();
+  await panel.getByRole('radiogroup', { name: 'Board mode' }).getByRole('radio', { name: 'Delete' }).click();
   await panel.getByRole('button', { name: 'Print lab manual: delete' }).click();
   await expect(panel.getByRole('alert')).toContainText('Delete “Print lab manual”?');
   await panel.getByRole('button', { name: 'Delete task' }).click();
@@ -195,7 +195,7 @@ test('the corkboard edits and deletes notes in its Edit and Delete modes (TASK-4
   // The rail's "Edit / Delete" opens the board straight in Edit mode.
   await closePanel(page);
   await page.getByRole('navigation', { name: 'Desk shortcuts' }).getByRole('button', { name: 'Edit / Delete' }).click();
-  await expect(panel.getByRole('group', { name: 'Board mode' }).getByRole('button', { name: 'Edit' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(panel.getByRole('radiogroup', { name: 'Board mode' }).getByRole('radio', { name: 'Edit' })).toHaveAttribute('aria-checked', 'true');
 });
 
 test('the wall calendar shows a deadline and the search key finds the task (CAL-1, CAL-3, SF-1, SF-4, SF-5, SF-6)', async ({ page }) => {
