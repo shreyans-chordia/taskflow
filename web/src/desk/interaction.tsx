@@ -15,6 +15,8 @@ export interface Target {
   view?: V3;
   /** Which way the object rises on hover; 'none' for things that would cover others. */
   lift: 'y' | 'z' | 'none';
+  /** Something that reacts in place when clicked (the plush), instead of opening a panel. */
+  press?: () => void;
 }
 
 export interface DeskApi {

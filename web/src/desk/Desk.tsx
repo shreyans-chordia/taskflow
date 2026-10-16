@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { CameraController } from './camera';
 import { DeskContext, TagTracker, type DeskApi, type Target } from './interaction';
 import type { DeskData } from './model';
-import { Corkboard, Keys, Lamp, Notebook, PomodoroClock, RAIL_TARGETS, Trays, WallCalendar } from './objects';
+import { Corkboard, Keys, Lamp, Notebook, Plush, PomodoroClock, RAIL_TARGETS, Trays, WallCalendar } from './objects';
 import { isSoftwareRenderer } from './quality';
 import { RubberRail } from './RubberRail';
 import { Kit, color, disposeTree } from './three/kit';
@@ -93,6 +93,7 @@ export default function Desk({ data, night, onToggleLamp, onOpen, panelOpen }: D
 
   const activate = useCallback(
     async (target: Target) => {
+      if (target.press) return target.press();
       if (target.key === 'lamp') return onToggleLamp();
       const cam = controller.current;
       if (busy.current || !cam) return;
@@ -350,6 +351,7 @@ function Scene({ data, night, paused, reducedMotion, onController, onEntered }: 
       <Trays kit={kit} data={data} />
       <Notebook kit={kit} data={data} />
       <PomodoroClock kit={kit} />
+      <Plush />
     </>
   );
 }
