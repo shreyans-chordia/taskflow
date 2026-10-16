@@ -2,7 +2,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { frameStep } from './frame';
-import { Hit, type Target } from './interaction';
+import { Hit, useDesk, type Target } from './interaction';
 import { boardOrder, dueLabel, isLate, openCountByCategory, weekSummary, type DeskData, type DeskTask } from './model';
 import { add, B, C, color, disposeTree, group, Kit, repaint, std, type PaintedTexture, type V3 } from './three/kit';
 import { chip, hashSeed, icon, mixHex, roundRect, shade, squiggle, wrapText } from './three/paint';
@@ -529,6 +529,108 @@ export function PomodoroClock({ kit }: { kit: Kit }) {
       <primitive object={built.root} dispose={null} />
     </Hit>
   );
+}
+
+/* ================= desk buddy: a felt plush on the book stack ================= */
+
+/** How long a squeeze takes to settle, in seconds. */
+const SQUISH_S = 0.9;
+
+/**
+ * An original plush that keeps you company: a round mint-felt buddy with stitched eyes, rosy cheeks and a tiny ticked
+ * note in its paws. It sits on the book stack; a click gives it a squeeze (it squashes, springs back and wobbles).
+ * Purely decorative: it opens nothing and reads no data.
+ */
+export function Plush() {
+  const desk = useDesk();
+  const invalidate = useThree((s) => s.invalidate);
+  const squish = useRef<number | null>(null); // seconds since the last squeeze, while it settles
+  const built = useBuilt(() => {
+    const root = new THREE.Group();
+    const seat = group(root, [-1.25, DESK_Y + 0.132, 0.5]); // the top of the book stack
+    seat.rotation.y = 0.45; // turned toward the chair
+    const body = group(seat, [0, 0, 0]); // scaled when squeezed, from the bottom
+    const felt = (hex: string) => new THREE.MeshPhysicalMaterial({ color: hex, roughness: 0.92, sheen: 1, sheenRoughness: 0.55, sheenColor: new THREE.Color('#FFFFFF') });
+    const mint = felt('#8CCBAE'), cream = felt('#F4EBDA'), blush = felt('#F2A3A0');
+    const thread = new THREE.MeshStandardMaterial({ color: '#2B2E33', roughness: 0.7 });
+    const R = 0.072;
+    const ball = (m: THREE.Material, r: number, p: V3, sc: V3 = [1, 1, 1]) => {
+      const mesh = add(body, new THREE.SphereGeometry(r, 32, 20), m, p);
+      mesh.scale.set(...sc);
+      return mesh;
+    };
+    ball(mint, R, [0, R * 0.92, 0], [1.08, 0.94, 0.95]); // the bean
+    ball(cream, R * 0.62, [0, R * 0.78, R * 0.62], [1, 0.95, 0.42]); // belly patch
+    for (const s of [-1, 1]) {
+      ball(mint, R * 0.3, [s * R * 0.62, R * 1.72, -R * 0.08], [1, 0.8, 0.7]); // ears
+      ball(blush, R * 0.18, [s * R * 0.6, R * 1.72, -R * 0.02], [0.75, 0.55, 0.5]); // inner ears
+      ball(thread, R * 0.085, [s * R * 0.33, R * 1.12, R * 0.9]); // stitched eyes
+      ball(blush, R * 0.15, [s * R * 0.58, R * 0.98, R * 0.78], [1, 0.6, 0.35]); // cheeks
+      ball(mint, R * 0.24, [s * R * 0.92, R * 0.62, R * 0.38], [0.8, 1, 0.9]); // paws
+      ball(mint, R * 0.26, [s * R * 0.5, R * 0.16, R * 0.62], [1, 0.7, 1.15]); // feet
+    }
+    // a small stitched smile
+    add(body, new THREE.TorusGeometry(R * 0.13, R * 0.025, 6, 16, Math.PI), thread, [0, R * 1.0, R * 0.93], [0.15, 0, Math.PI], false);
+    // a tiny ticked note held against the belly, in pen blue on paper
+    const note = new THREE.CanvasTexture(paintTick());
+    note.colorSpace = THREE.SRGBColorSpace;
+    add(body, B(R * 0.95, R * 0.95, 0.002), [cream, cream, cream, cream, new THREE.MeshStandardMaterial({ map: note, roughness: 0.9 }), cream], [0, R * 0.58, R * 0.98], [-0.25, 0, 0.12], false);
+    return { root, body };
+  });
+
+  useFrame((_, dt) => {
+    if (squish.current === null) return;
+    squish.current += frameStep(dt);
+    if (squeezeAt(built.body, squish.current)) squish.current = null;
+    invalidate();
+  });
+
+  const target = useMemo<Target>(
+    () => ({
+      key: 'plush',
+      label: 'Desk buddy',
+      sub: 'Click for a squeeze',
+      lift: 'y',
+      press: () => {
+        if (desk.reducedMotion) return;
+        squish.current = 0;
+        invalidate();
+      },
+    }),
+    [desk.reducedMotion, invalidate],
+  );
+
+  return (
+    <Hit target={target}>
+      <primitive object={built.root} dispose={null} />
+    </Hit>
+  );
+}
+
+/** Poses the plush `t` seconds into a squeeze: squash and stretch with a wobble, settling. True once it is still. */
+export function squeezeAt(body: THREE.Object3D, t: number): boolean {
+  const k = Math.min(1, t / SQUISH_S);
+  if (k >= 1) {
+    body.scale.set(1, 1, 1);
+    body.rotation.z = 0;
+    return true;
+  }
+  const decay = (1 - k) ** 2;
+  const s = Math.sin(t * 18) * 0.16 * decay;
+  body.scale.set(1 + s * 0.6, 1 - s, 1 + s * 0.6);
+  body.rotation.z = Math.sin(t * 11) * 0.12 * decay;
+  return false;
+}
+
+/** The plush's little note: a paper square with a pen-blue tick. */
+function paintTick(): HTMLCanvasElement {
+  const c = document.createElement('canvas');
+  c.width = c.height = 128;
+  const x = c.getContext('2d')!;
+  x.fillStyle = '#FDF9F0'; x.fillRect(0, 0, 128, 128);
+  x.strokeStyle = '#2F4E7A'; x.lineWidth = 14; x.lineCap = 'round'; x.lineJoin = 'round';
+  x.beginPath(); x.moveTo(30, 68); x.lineTo(54, 92); x.lineTo(100, 38); x.stroke();
+  return c;
 }
 
 /** Every target the shortcut rail can open, so the rail works without a mouse or a 3D-capable pointer. */
