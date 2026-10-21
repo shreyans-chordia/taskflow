@@ -11,7 +11,14 @@ const schema = z.object({
   MONGODB_URI: z.string().min(1, 'MONGODB_URI is required'),
   /** Comma-separated list of browser origins allowed to call the API with cookies. */
   CORS_ORIGINS: z.string().default('http://localhost:5173'),
-  JWT_ACCESS_SECRET: z.string().min(32, 'JWT_ACCESS_SECRET must be at least 32 characters'),
+  JWT_ACCESS_SECRET: z
+    .string()
+    .min(32, 'JWT_ACCESS_SECRET must be at least 32 characters')
+    // The value in .env.example is public, so a copied-but-unchanged .env must not boot.
+    .refine((s) => !/replace[-_ ]?me|change[-_ ]?me|your[-_ ]?secret|example/i.test(s), {
+      message: 'JWT_ACCESS_SECRET is still the placeholder from .env.example; generate a random one',
+    })
+    .refine((s) => new Set(s).size >= 10, { message: 'JWT_ACCESS_SECRET is too repetitive to be random' }),
   ACCESS_TOKEN_TTL_MIN: z.coerce.number().int().min(1).max(60).default(15),
   REFRESH_TOKEN_TTL_DAYS: z.coerce.number().int().min(1).max(90).default(30),
   BCRYPT_COST: z.coerce.number().int().min(10).max(15).default(12),
