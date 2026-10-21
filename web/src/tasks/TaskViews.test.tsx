@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '../api/client';
 import { categoriesApi, prioritiesApi, tasksApi } from '../api/endpoints';
 import type { Category, Priority, Task } from '../api/types';
@@ -39,10 +39,14 @@ function renderViews(initial: TaskView = { type: 'list' }, onExit?: () => void) 
 }
 
 beforeEach(() => {
+  // Pin today so the fixture deadline (20 Oct 2026) is upcoming, not overdue, whatever day the suite runs.
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime(new Date(2026, 9, 13, 10));
   api.tasks.list.mockResolvedValue([base]);
   api.cats.list.mockResolvedValue(cats);
   api.prios.list.mockResolvedValue(prios);
 });
+afterEach(() => vi.useRealTimers());
 
 describe('from the list to a task and back (TASK-3)', () => {
   it('opens a task from its title, shows everything about it, and Back returns to the list', async () => {
