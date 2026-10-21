@@ -3,6 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "description": "TaskFlow: a personal task manager with a 3D desk interface",
+  "license": "MIT",
+  "author": "Shreyans Chordia",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/shreyans-chordia/taskflow.git"
+  },
+  "homepage": "https://github.com/shreyans-chordia/taskflow#readme",
+  "bugs": {
+    "url": "https://github.com/shreyans-chordia/taskflow/issues"
+  },
   "scripts": {
     "dev": "npm --prefix server run dev",
     "test": "npm --prefix server test",

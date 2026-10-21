@@ -1,0 +1,10 @@
+# Secret scanning (runs in CI). Test files hold deliberately fake secrets.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Fake secrets used only by automated tests"
+paths = [
+  '''^server/tests/''',
+  '''^web/playwright\.config\.ts$''',
+]

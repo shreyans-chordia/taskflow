@@ -2,6 +2,7 @@
   "name": "@taskflow/server",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
   "description": "TaskFlow REST API: Express 5 + MongoDB, cookie-based JWT auth with rotating refresh tokens",
   "type": "module",
   "engines": {
