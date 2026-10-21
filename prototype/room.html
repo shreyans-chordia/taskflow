@@ -605,7 +605,7 @@ function sample() {
     mk('RDBMS mini project', 'Study', 'Medium', plus(-1), '', [['ER diagram', true], ['Normalise tables', false]]),
     mk('Read a book', 'Personal', 'Low', plus(2)),
     mk('Prepare for placement round', 'Career', 'High', plus(5), '', [['Aptitude mock test', false], ['Update résumé', false]]),
-    { ...mk('Submit Lab 6 activity diagram', 'Study', 'High', plus(-2), '', [], true), doneAt: plus(-2) },
+    { ...mk('Submit project report', 'Study', 'High', plus(-2), '', [], true), doneAt: plus(-2) },
     { ...mk('Morning run', 'Health', 'Low', plus(-1), '', [], true), doneAt: plus(-1) },
   ];
 }
@@ -2172,7 +2172,7 @@ function renderInner() {
     note = previewNote();
     h = `<form id="task-form" novalidate data-id="${t ? t.id : ''}" style="display:flex;flex-direction:column;gap:18px">
       ${v.msg ? `<p class="ok-msg">${esc(v.msg)}</p>` : ''}
-      <div class="field"><label for="f-title">Title</label><input id="f-title" value="${esc(dr.title)}" placeholder="e.g. Submit Lab 7 record" autocomplete="off"><span class="err" id="f-err" hidden>Give the task a title.</span></div>
+      <div class="field"><label for="f-title">Title</label><input id="f-title" value="${esc(dr.title)}" placeholder="e.g. Renew passport" autocomplete="off"><span class="err" id="f-err" hidden>Give the task a title.</span></div>
       <div class="field"><label for="f-desc">Description · optional</label><textarea id="f-desc" rows="2">${esc(dr.desc)}</textarea></div>
       <div class="field"><span class="lbl">Category</span><div class="row" style="flex-wrap:wrap;gap:8px" role="group" aria-label="Category">${CATS.map(c => `<button type="button" class="fchip" data-fcat="${esc(c.name)}" aria-pressed="${dr.category === c.name}"><i class="cdot" style="background:${c.color}"></i>${esc(c.name)}</button>`).join('')}<button type="button" class="fchip newchip" data-qa="cat" aria-expanded="${v.qa === 'cat'}">${ic('plus')}New category</button></div>${v.qa === 'cat' ? qaHTML('cat') : ''}</div>
       <div class="field"><span class="lbl">Priority</span><div class="pcs" role="group" aria-label="Priority">${PRIOS.map(x => `<button type="button" class="pc pz" style="${pst(x.id)}" data-fpr="${esc(x.id)}" aria-pressed="${dr.priority === x.id}">${ring(x.id)}${esc(x.name)}</button>`).join('')}<button type="button" class="pc newpc" data-qa="pr" aria-expanded="${v.qa === 'pr'}">${ic('plus')}New level</button></div>${v.qa === 'pr' ? qaHTML('pr') : ''}</div>

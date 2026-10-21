@@ -21,3 +21,7 @@ blob-report/
 # Emails written by MAIL_TRANSPORT=file (local dev and end-to-end tests)
 .mail-outbox/
 web/e2e/.outbox/
+
+# Local, per-developer notes (kept out of the public repo)
+CLAUDE.md
+AGENTS.md

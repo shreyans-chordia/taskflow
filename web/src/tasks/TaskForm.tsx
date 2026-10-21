@@ -130,7 +130,7 @@ export function TaskForm({ id, titleId, categoryId, date, onSaved, onCancel }: {
           <div className={`field${errors.title ? ' bad' : ''}`}>
             <label className="label" htmlFor={`${uid}-t`}>Title</label>
             <div className="field-input">
-              <input ref={titleRef} id={`${uid}-t`} value={draft.title} maxLength={200} onChange={(e) => set('title', e.target.value)} placeholder="e.g. Submit Lab 7 record" autoComplete="off"
+              <input ref={titleRef} id={`${uid}-t`} value={draft.title} maxLength={200} onChange={(e) => set('title', e.target.value)} placeholder="e.g. Renew passport" autoComplete="off"
                 autoFocus={!existing} aria-invalid={errors.title ? true : undefined} aria-describedby={errors.title ? `${uid}-te` : undefined} />
             </div>
             {errors.title && <span className="field-error" id={`${uid}-te`}>{errors.title}</span>}
