@@ -135,7 +135,7 @@ jobs:
           [ -f e2e.log ] || exit 0
           body=$(tail -n 150 e2e.log | sed 's/\x1b\[[0-9;]*m//g' | sed ':a;N;$!ba;s/%/%25/g;s/\r//g;s/\n/%0A/g')
           echo "::error title=E2E output::$body"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: playwright-report
